@@ -1,0 +1,7 @@
+[OKAY NAMES]
+# We allow exceptions to the variable naming rules since these are understandable
+good-names=ID,DO,IF,GE,LE,LT,GT,EQ
+
+[MESSAGE CONTROL]
+# We allow globals for editing the global current token values
+disable=global-statement
