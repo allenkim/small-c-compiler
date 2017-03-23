@@ -1,9 +1,11 @@
 """
 Scanner for our compiler
 """
-from setup import (GLOBALS, TK, KEYWORDS, ARITH_OPERATORS)
+from setup import GLOBALS, TK, KEYWORDS, OPERATORS
+from error_handling import scanner_error
 
 curr_char = " "
+
 
 def print_token():
     """
@@ -12,9 +14,15 @@ def print_token():
     print("{} - Val: {}".format(GLOBALS["CUR_TOKEN"],
                                 GLOBALS["CUR_VALUE"]))
 
+
 def get_char():
+    """
+    Grabs the next character from the file and adds one to column
+    """
     GLOBALS["CUR_COL"] += 1
-    return chr(GLOBALS["MMAPPED_FILE"].read_byte())
+    c = chr(GLOBALS["MMAPPED_FILE"].read_byte())
+    GLOBALS["SCAN_P"] = GLOBALS["MMAPPED_FILE"].tell()
+    return c
 
 
 def get_token():
@@ -35,6 +43,8 @@ def get_token():
         GLOBALS["CUR_LINE"] += 1
         GLOBALS["CUR_COL"] = 1
         GLOBALS["CUR_TOKEN"] = TK.EOLN
+        curr_char = get_char()
+        return
     # Checks if character is white space (not new line)
     elif curr_char.isspace():
         curr_char = get_char()
@@ -58,6 +68,20 @@ def get_token():
             GLOBALS["CUR_VALUE"] += curr_char
             curr_char = get_char()
             if not curr_char.isdigit():
+                if in_e:
+                    GLOBALS["CUR_VALUE"] = float(GLOBALS["CUR_VALUE"])
+                    GLOBALS["CUR_TOKEN"] = TK.FLOATLIT
+                    break
+                else:
+                    if curr_char == 'e' or curr_char == 'E':
+                        GLOBALS["CUR_VALUE"] += curr_char
+                        in_e = True
+                        curr_char = get_char()
+                        if curr_char == '-' or curr_char.isdigit():
+                            continue
+                        else:
+                            scanner_error(
+                                "Expected integer after " + curr_char)
                 if in_decimal:
                     GLOBALS["CUR_VALUE"] = float(GLOBALS["CUR_VALUE"])
                     GLOBALS["CUR_TOKEN"] = TK.FLOATLIT
@@ -71,20 +95,21 @@ def get_token():
                         GLOBALS["CUR_TOKEN"] = TK.INTLIT
                         break
     # Checks if the character is an operator
-    elif curr_char in ARITH_OPERATORS:
-        GLOBALS["CUR_TOKEN"] = ARITH_OPERATORS[curr_char]
+    elif curr_char in OPERATORS["L1"]:
+        tmp_str = curr_char
         curr_char = get_char()
-    # Checks parentheses
-    elif curr_char == '(':
-        curr_char = get_char()
-        GLOBALS["CUR_TOKEN"] = TK.LPAREN
-    elif curr_char == ')':
-        curr_char = get_char()
-        GLOBALS["CUR_TOKEN"] = TK.RPAREN
+        tmp_str += curr_char
+        if tmp_str in OPERATORS["L2"]:
+            curr_char = get_char()
+            tmp_str += curr_char
+            if tmp_str in OPERATORS["L3"]:
+                GLOBALS["CUR_TOKEN"] = OPERATORS["L3"][tmp_str]
+                curr_char = get_char()
+            else:
+                GLOBALS["CUR_TOKEN"] = OPERATORS["L2"][tmp_str[:-1]]
+        else:
+            GLOBALS["CUR_TOKEN"] = OPERATORS["L1"][tmp_str[:-1]]
     # If character is an unrecognized token, raise error
     else:
-        raise ValueError("Unrecognized token!")
-
-    # Update GLOBALS["SCAN_P"] to match what byte we are looking at
-    GLOBALS["SCAN_P"] = GLOBALS["MMAPPED_FILE"].tell()
+        scanner_error("Unrecognized token: {}".format(curr_char))
 

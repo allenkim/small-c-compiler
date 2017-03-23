@@ -3,6 +3,7 @@ Setup of global variables
 """
 from enum import Enum, auto
 
+
 class TK(Enum):
     """
     Enumeration of all the different tokens available in the language
@@ -14,14 +15,14 @@ class TK(Enum):
     ID = auto()  # a, abc, ab123, ...
 
     # Types
-    SIGNED = auto() # either prefix or interpreted as int
-    UNSIGNED = auto() # either prefix or interpreted as unsigned int
-    CHAR = auto() # 1 byte (unsigned)
-    SHORT = auto() # either prefix (short int) or 2 bytes (signed short)
-    INT = auto() # 4 bytes (signed)
-    LONG = auto() # either prefix (long long, ...)  or 8 bytes (signed long)
-    FLOAT = auto() # 4 bytes
-    DOUBLE = auto() # 8 bytes
+    SIGNED = auto()  # either prefix or interpreted as int
+    UNSIGNED = auto()  # either prefix or interpreted as unsigned int
+    CHAR = auto()  # 1 byte (unsigned)
+    SHORT = auto()  # either prefix (short int) or 2 bytes (signed short)
+    INT = auto()  # 4 bytes (signed)
+    LONG = auto()  # either prefix (long long, ...)  or 8 bytes (signed long)
+    FLOAT = auto()  # 4 bytes
+    DOUBLE = auto()  # 8 bytes
 
     # Keywords
     IF = auto()
@@ -31,71 +32,74 @@ class TK(Enum):
     FOR = auto()
     BREAK = auto()
     CONTINUE = auto()
+    SIZEOF = auto()
+    STRUCT = auto()
     VOID = auto()
+    RETURN = auto()
 
     # Arithmetic Operators
     PLUS = auto()  # a + b
-    INCR = auto() # ++a, a++
+    INCR = auto()  # ++a, a++
     MINUS = auto()  # a - b
-    DECR = auto() # --a, a--
+    DECR = auto()  # --a, a--
     MUL = auto()  # a * b
     DIV = auto()  # a / b
     MOD = auto()  # a % b
 
     # Comparison operators
-    EQ = auto() # a == b
-    NEQ = auto() # a != b
-    LT = auto() # a < b
-    LTE = auto() # a <= b
-    GT = auto() # a > b
-    GTE = auto() # a >= b
+    EQ = auto()  # a == b
+    NEQ = auto()  # a != b
+    LT = auto()  # a < b
+    LTE = auto()  # a <= b
+    GT = auto()  # a > b
+    GTE = auto()  # a >= b
 
     # Logical Operators
-    NOT = auto() # !a
-    AND = auto() # a && b
-    OR = auto() # a || b
+    NOT = auto()  # !a
+    AND = auto()  # a && b
+    OR = auto()  # a || b
 
     # Bitwise Operators
-    BIT_NOT = auto() # ~a
-    BIT_AND = auto() # a & b
-    BIT_OR = auto() # a | b
-    LSHIFT = auto() # a << b
-    RSHIFT = auto() # a >> b
+    BIT_NOT = auto()  # ~a
+    BIT_AND = auto()  # a & b
+    BIT_OR = auto()  # a | b
+    LSHIFT = auto()  # a << b
+    RSHIFT = auto()  # a >> b
 
     # Compound Operators
-    PLUS_EQ = auto() # a += b
-    MINUS_EQ = auto() # a -= b
-    MUL_EQ = auto() # a *= b
-    DIV_EQ = auto() # a /= b
-    MOD_EQ = auto() # a %= b
-    BIT_AND_EQ = auto() # a &= b
-    BIT_OR_EQ = auto() # a |= b
-    LSHIFT_EQ = auto() # a <<= b
-    RSHIFT_EQ = auto() # a >>= b
+    PLUS_EQ = auto()  # a += b
+    MINUS_EQ = auto()  # a -= b
+    MUL_EQ = auto()  # a *= b
+    DIV_EQ = auto()  # a /= b
+    MOD_EQ = auto()  # a %= b
+    BIT_AND_EQ = auto()  # a &= b
+    BIT_OR_EQ = auto()  # a |= b
+    LSHIFT_EQ = auto()  # a <<= b
+    RSHIFT_EQ = auto()  # a >>= b
 
     # Member and Pointer Operators
-    ARROW = auto() # a->b (member b of object pointed to by a)
-    DOT = auto() # a.b (member b of object a)
+    ARROW = auto()  # a->b (member b of object pointed to by a)
+    DOT = auto()  # a.b (member b of object a)
 
     # Other Operators
-    ASSIGNMENT = auto() #  a = b
-    SEMICOLON = auto() # a;
-    COMMA = auto() # a, b
-    QUESTION = auto() # a ? b : c
-    COLON = auto() # a ? b : c
+    ASSIGNMENT = auto()  # a = b
+    SEMICOLON = auto()  # a;
+    COMMA = auto()  # a, b
+    QUESTION = auto()  # a ? b : c
+    COLON = auto()  # a ? b : c
 
     # Paired Symbols
     LPAREN = auto()  # (
     RPAREN = auto()  # )
     LBRACE = auto()  # {
     RBRACE = auto()  # }
-    LBRACKET = auto() # [
-    RBRACKET = auto() # ]
-    
+    LBRACKET = auto()  # [
+    RBRACKET = auto()  # ]
+
     # Comments
-    LINE_COMMENT = auto() # //
-    START_COMMENT = auto() # /*
-    END_COMMENT = auto() # */
+    LINE_COMMENT = auto()  # //
+    START_COMMENT = auto()  # /*
+    END_COMMENT = auto()  # */
 
     # End of line and end of file
     EOLN = auto()  # new line
@@ -117,16 +121,65 @@ KEYWORDS = {
     "for": TK.FOR,
     "break": TK.BREAK,
     "continue": TK.CONTINUE,
-    "void": TK.VOID
+    "sizeof": TK.SIZEOF,
+    "struct": TK.STRUCT,
+    "void": TK.VOID,
+    "return": TK.RETURN,
 }
 
-ARITH_OPERATORS = {
-    "+": TK.PLUS,
-    "-": TK.MINUS,
-    "*": TK.MUL,
-    "/": TK.DIV,
-    "%": TK.MOD,
+OPERATORS = {
+    "L1": {
+        "+": TK.PLUS,
+        "-": TK.MINUS,
+        "*": TK.MUL,
+        "/": TK.DIV,
+        "%": TK.MOD,
+        "<": TK.LT,
+        ">": TK.GT,
+        "!": TK.NOT,
+        "~": TK.BIT_NOT,
+        "&": TK.BIT_AND,
+        "|": TK.BIT_OR,
+        ".": TK.DOT,
+        "=": TK.ASSIGNMENT,
+        ";": TK.SEMICOLON,
+        ",": TK.COMMA,
+        "?": TK.QUESTION,
+        ":": TK.COLON,
+        "(": TK.LPAREN,
+        ")": TK.RPAREN,
+        "{": TK.LBRACE,
+        "}": TK.RBRACE,
+        "[": TK.LBRACKET,
+        "]": TK.RBRACKET,
+    },
+    "L2": {
+        "+=": TK.PLUS_EQ,
+        "++": TK.INCR,
+        "-=": TK.MINUS_EQ,
+        "--": TK.DECR,
+        "*=": TK.MUL_EQ,
+        "/=": TK.DIV_EQ,
+        "%=": TK.MOD_EQ,
+        "<=": TK.LTE,
+        ">=": TK.GTE,
+        "!=": TK.NEQ,
+        "&=": TK.BIT_AND_EQ,
+        "|=": TK.BIT_OR_EQ,
+        "<<": TK.LSHIFT,
+        ">>": TK.RSHIFT,
+        "->": TK.ARROW,
+        "==": TK.EQ,
+        "//": TK.LINE_COMMENT,
+        "/*": TK.START_COMMENT,
+        "*/": TK.END_COMMENT,
+    },
+    "L3": {
+        "<<=": TK.LSHIFT_EQ,
+        ">>=": TK.RSHIFT_EQ,
+    }
 }
+
 
 GLOBALS = {
     "CUR_TOKEN": None,
