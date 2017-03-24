@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Compiler written in Python for a small C-style language
 """
