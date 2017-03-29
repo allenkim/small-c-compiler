@@ -96,11 +96,6 @@ class TK(Enum):
     LBRACKET = auto()  # [
     RBRACKET = auto()  # ]
 
-    # Comments
-    LINE_COMMENT = auto()  # //
-    START_COMMENT = auto()  # /*
-    END_COMMENT = auto()  # */
-
     # End of line and end of file
     EOLN = auto()  # new line
     EOF = auto()  # end of file
@@ -170,9 +165,6 @@ OPERATORS = {
         ">>": TK.RSHIFT,
         "->": TK.ARROW,
         "==": TK.EQ,
-        "//": TK.LINE_COMMENT,
-        "/*": TK.START_COMMENT,
-        "*/": TK.END_COMMENT,
     },
     "L3": {
         "<<=": TK.LSHIFT_EQ,

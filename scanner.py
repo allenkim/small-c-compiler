@@ -19,11 +19,13 @@ def get_char():
     """
     Grabs the next character from the file and adds one to column
     """
+    if GLOBALS["MMAPPED_FILE"].tell() >= GLOBALS["MMAPPED_FILE"].size():
+        return TK.EOF
+
     GLOBALS["CUR_COL"] += 1
     c = chr(GLOBALS["MMAPPED_FILE"].read_byte())
     GLOBALS["SCAN_P"] = GLOBALS["MMAPPED_FILE"].tell()
     return c
-
 
 def get_token():
     """ Get the next token from the source code
@@ -32,25 +34,25 @@ def get_token():
     # Reinitialize current token variables
     GLOBALS["CUR_VALUE"] = ""
 
-    # If we reach the end of the file, return the EOF token
-    if GLOBALS["MMAPPED_FILE"].tell() >= GLOBALS["MMAPPED_FILE"].size():
+    # Check for end of file
+    if curr_char == TK.EOF:
         GLOBALS["SCAN_P"] = GLOBALS["MMAPPED_FILE"].tell()
         GLOBALS["CUR_TOKEN"] = TK.EOF
         return
 
-    # Checks if character is new line
-    if curr_char == '\n':
-        GLOBALS["CUR_LINE"] += 1
-        GLOBALS["CUR_COL"] = 1
-        GLOBALS["CUR_TOKEN"] = TK.EOLN
+    # Checks if character is white space
+    while curr_char.isspace():
+        # Checks if character is new line
+        if curr_char == '\n':
+            GLOBALS["CUR_LINE"] += 1
+            GLOBALS["CUR_COL"] = 1
+            GLOBALS["CUR_TOKEN"] = TK.EOLN
+            curr_char = get_char()
+            return
         curr_char = get_char()
-        return
-    # Checks if character is white space (not new line)
-    elif curr_char.isspace():
-        curr_char = get_char()
-        get_token()
+
     # If the char is alphabetical, then we check if keyword or identifier
-    elif curr_char.isalpha():
+    if curr_char.isalpha():
         while True:
             GLOBALS["CUR_VALUE"] += curr_char
             curr_char = get_char()
@@ -94,6 +96,24 @@ def get_token():
                         GLOBALS["CUR_VALUE"] = int(GLOBALS["CUR_VALUE"])
                         GLOBALS["CUR_TOKEN"] = TK.INTLIT
                         break
+    elif curr_char == '/':
+        curr_char = get_char()
+        if curr_char == '/':
+            while curr_char != '\n':
+                curr_char = get_char()
+            if curr_char != TK.EOF:
+                get_token()
+        elif curr_char == '*':
+            while True:
+                curr_char = get_char()
+                if curr_char == '*':
+                    curr_char = get_char()
+                    if curr_char == '/':
+                        curr_char = get_char()
+                        get_token()
+                        return
+                elif curr_char == TK.EOF:
+                    scanner_error("Unterminated comment")
     # Checks if the character is an operator
     elif curr_char in OPERATORS["L1"]:
         tmp_str = curr_char
@@ -109,7 +129,7 @@ def get_token():
                 GLOBALS["CUR_TOKEN"] = OPERATORS["L2"][tmp_str[:-1]]
         else:
             GLOBALS["CUR_TOKEN"] = OPERATORS["L1"][tmp_str[:-1]]
-    # If character is an unrecognized token, raise error
+   # If character is an unrecognized token, raise error
     else:
         scanner_error("Unrecognized token: {}".format(curr_char))
 

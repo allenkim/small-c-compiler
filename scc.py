@@ -3,6 +3,7 @@
 Compiler written in Python for a small C-style language
 """
 import sys
+import os
 import mmap
 
 from setup import GLOBALS, TK
@@ -22,6 +23,9 @@ if __name__ == "__main__":
         raise ImportError("Expected input file")
 
     GLOBALS["CUR_FILE"] = sys.argv[1]
+    # If empty file, we print error
+    if os.stat(GLOBALS["CUR_FILE"]).st_size == 0:
+        raise ValueError("Cannot compile empty file")
     # Then we open with mmap
     with open(GLOBALS["CUR_FILE"], "r+b") as f:
         # memory-map the file, size 0 means whole file
