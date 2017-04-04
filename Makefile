@@ -1,3 +1,3 @@
-all:
-	./scc.py test.c
+run:
+	python3 scc.py test.c
 

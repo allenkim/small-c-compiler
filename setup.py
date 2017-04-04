@@ -14,7 +14,12 @@ class TK(Enum):
     STRINGLIT = auto()  # "hello", "world", ...
     ID = auto()  # a, abc, ab123, ...
 
-    # Types
+    # Types of Identifiers
+    VAR = auto() # standard variables
+    POINTER = auto() # pointers
+    FUNC = auto() # functions
+
+    # Primitive types
     SIGNED = auto()  # either prefix or interpreted as int
     UNSIGNED = auto()  # either prefix or interpreted as unsigned int
     CHAR = auto()  # 1 byte (unsigned)
@@ -36,6 +41,19 @@ class TK(Enum):
     STRUCT = auto()
     VOID = auto()
     RETURN = auto()
+    SWITCH = auto()
+    CASE = auto()
+    DEFAULT = auto()
+    CONST = auto()
+    STATIC = auto()
+    TYPEDEF = auto()
+    ENUM = auto()
+    GOTO = auto()
+    UNION = auto()
+    AUTO = auto()
+    REGISTER = auto()
+    VOLATILE = auto()
+    EXTERN = auto()
 
     # Arithmetic Operators
     PLUS = auto()  # a + b
@@ -120,6 +138,19 @@ KEYWORDS = {
     "struct": TK.STRUCT,
     "void": TK.VOID,
     "return": TK.RETURN,
+    "switch": TK.SWITCH,
+    "case": TK.CASE,
+    "default": TK.DEFAULT,
+    "const": TK.CONST,
+    "static": TK.STATIC,
+    "typedef": TK.TYPEDEF,
+    "enum": TK.ENUM,
+    "goto": TK.GOTO,
+    "union": TK.UNION,
+    "auto": TK.AUTO, 
+    "register": TK.REGISTER,
+    "volatile": TK.VOLATILE,
+    "extern": TK.EXTERN,
 }
 
 OPERATORS = {
@@ -182,5 +213,6 @@ GLOBALS = {
     "CUR_COL": 0,
     "SCAN_P": 0,
 
-    "MMAPPED_FILE": None
+    "MMAPPED_FILE": None,
+    "SYMBOL_TABLE": {},
 }

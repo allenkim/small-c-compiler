@@ -1,0 +1,729 @@
+3-29-17
+Assume that F(), T(), and E()
+return TYPE
+
+E() for example used
+generate(op, TYPE1, TYPE2)
+
+Return types (int, real, bool, char)
+- In C, only int and real
++ I R B C
+I I   X X
+R   R X X
+B X X X X
+C X X X X
+
+R + I -> cvr fadd
+I + R -> xchg cvr xchg(?) add
+
+OR I R B C
+I  I X X X
+R  X X X X
+B  X X B X
+C  X X X X
+
++ I R B C
+  I R X X
+
+- I R B C
+  I R X X
+
+not I R B C
+    I X B X
+
+= I R B C
+I     X X
+R     X X
+B X X   X 
+C X X X
+just popping and convert
+
+pascal system "functions"
+F -> lit | idvar | +F | -F | not F | (E) | abs(E)
+abs is a system "function"
+like sizeof in C (built into parser)
+
+abs I R B C
+    I R X X
+
+ord I R B C
+	I X I I
+
+succ I R B C
+	 I X B C
+just push 1 and add
+
+system symbol table
+'abs': TK_SYSFUNC, #1
+no source file for it
+just handcrafted into the symbol table
+
+<statement> -> <repeat statement>
+<repeat statement> -> repeat <statements> until <cond>
+
+void cond(){
+	if (E() != B)
+		error();
+}
+
+STATEMENTS | COND (result on stack)
+
+3-27-17
+<pascal_program> ->
+	<program_header>
+	<declaration>
+	<begin_statement>
+	EOF (emit halt)
+
+<program_header> -> e
+<declarations> ->
+	<var decl> <declarations>
+	<const decl> <declarations>
+	<label decl> <declarations>
+	type
+	procedure
+	function
+	e
+
+<begin_statement> ->
+	begin <statements>
+	end
+
+<statements> ->
+	<begin_statement> <statements>
+	<if_state> <statements>
+	<for_state> <statements>
+	<goto>
+	<repeat>
+	<while>
+	<TK_A_VAR> - different from identifier, equivalent to assignment
+			   - in C, not true as there is ++
+
+<var decl> ->
+	var [<namelist>:<type>]+; ( var x,y:real; i,j:integer )
+
+do {
+match(TK_VAR);
+// assemble a list of names
+// ensure that TK_ID are not repeated in BOTH the list and symtab
+// check TK_ID agains list and CURRENT symtab
+match(TK_COLON)
+read type
+compute size
+
+allocate vars into symtab
+dp <- align(dp, size) // optional
+addr <- dp
+dp <- dp + size
+
+delete the list
+} while (curtoken == TK_ID)
+
+In symbol table:
+	<name>
+	TK_A_VAR
+	<type> = I, R, B, C
+	<flags>
+	<addr>
+
+!properly! integer - predefined type inside system unit
+
+<assignment> ->
+	LHS = RHS
+	var name = E
+	remember addr, type
+	E();
+	generate "pop addr"
+
+3-22-17
+Code: Byte array, created by comp, executed in runtime
+Data: Byte array, allocated by compiler, used during runtime
+Stack: array of ?, bytes is best, but we can use a union to show
+Heap: ? (dynamic memory is a big separate topic)
+
+Registers: 
+	IP - instruction pointer (index -> code)
+			for compilation: allocation
+			for execution: current instruction
+	DP - data ptr, alloc only
+	SP - stack ptr, runtime only
+	BP - base ptr, runtime only
+
+void run(){
+	ip = 0
+	while (1){
+		switch (code[ip++]){
+			case:
+			...
+		}
+	}
+}
+
+Use symbolic names for instructions
+#define op_push 1
+#define op_pop 2
+...
+
+Instructions:
+1) data movement
+   - push [1|4]bytes - [push|addr]
+   - pop  [1|4]bytes - [pop|addr]
+   - pushi [1|4]bytes - [pushi|val]
+   - xchg [1] - swap top 2 on stack
+   - dup [1] - dup top elt on stack
+   - remove [1] - pop junk
+2) arith
+   - add [1]
+   - fadd [1] (floating point version is implied for others)
+   - sub
+   - mul
+   - div
+   - mod
+   - and
+   - or
+   - shiftl
+   - shiftr
+   - neg
+   - not
+   - cvr
+   - cvi
+   - eql
+   - neq
+   - lss
+   - gtr
+   - leq
+   - geq
+3) Jumps 
+	- jmp [1|4]bytes - [JMP|addr]
+	assign to ip the address
+	- jfalse - same but takes argument from stack
+	- jtrue - ""
+	- call
+	- ret
+	- jtab
+	- halt
+4) I/O
+	- print_int
+	- ...
+
+5) Others
+	- sin
+
+case op_push:
+	int a = *(int*)(code + ip);
+	ip += sizeof(int)
+	int v = *(int*)(data + a);
+	stack[sp++].i = v;
+
+case op_add:
+	sp--;
+	stack[sp].i += stack[sp-1].i;
+	break;
+
+case op_eql:
+	sp--;
+	stack[sp].i = (stack[sp].i == stack[sp-1].i);
+	break;
+
+case op_halt:
+	exit()
+
+3-20-17
+
+TYPE E(){
+	type t1 = T();
+	while (curtoken == TK_PLUS || curtoken == TK_MINUS){
+		op = curtoken;
+		gettoken();
+		type t2 = T();
+		t1 = generate(op, t1, t2);
+	}
+	return t1;
+}
+
+tail recursion
+E -> TE'
+E' -> +TE' | -TE' | e
+
+a * b + c * d
+a | b | * c | d | * +
+  v   v     v   v
+
+1) Converter to PostScript/Forth/PolishNotation
+2) push a, push b, mul, push c, push d, mul, add
+- a simulator for stack-based architecture
+3) same, but binary
+4) Native code via macros text output 
+5) Same as 4, but binary
+6) Same as 4 for JavaVM
+7) Save as 4 for Jasmin
+8) Optimizing multipass compiler
+9) Generate diagrams
+10) Constant expression evaluation
+
+3-13-17
+
+a*b+c*d
+
+
+We can add symbols into the grammar (circles with symbols in it)
+decorated grammars!
+
+void E(){
+	T();
+	E'();
+}
+
+void E'(){
+	if (currtoken == TK.PLUS){
+		match(TK.PLUS);
+		T();
+		E'();
+	}
+	else if (currtoken == TK_MINUS){
+	...
+	}
+	else{
+	}
+}
+
+# means EOF
+
+G -> E#
+
+E -> TE'
+E' -> +TE' | -TE' | e
+
+T -> FT'
+T' -> *FT' | /FT' | e
+----------------------------
+A -> A\alpha_1 | A\alpha_2 | ... | \beta_1 | \beta_2 | ...
+
+A -> \beta_1 A' | \beta_2 A' | ...
+A' -> \alpha_1 A' | \alpha_2 A'
+
+void E(){
+	do {
+		E(); match(TK_PLUS); T();
+	}
+	or
+	{
+		E(); match(TK_MINUS); T();
+	}
+	or
+	{
+		T();
+	}
+}
+
+Attempt to write parser for expressions now
+
+Remember EOF at end to make sure whole input is parsed
+
+void match(TOKEN t){
+	if (t != curtoken)
+		error();
+	else
+		gettoken();
+}
+
+void M() {
+	if (currtoken = TK_LP){
+		match(TK_LP);
+		M();
+		match(TK_RP);
+		M();
+	}
+	else{
+	}
+}
+
+M -> (M)M
+M -> e
+
+a + b * c
+			E
+	E		+		T
+	T			T	*	F
+	F			F		id
+	id			id
+
+E -> E + T | E - T | T | E or T | E xor T
+T -> T * F | T / F | F | T div F | T mod F | T and F | T shl F | T shr F
+F -> id | lit | -F | +F | not F | (E)
+
+Missing: 
+comparison operators
+in
+[] and ()
+. and ^
+
+
+Expression
+Terms using +, -
+
+Terms
+Factors using *, /
+
+
+
+
+3-8-17
+
+E -> E+T | T | E-T
+
+left-associative
+E -> E + T | T
+T -> lit | var
+
++, -, *, /
+op is left-associative if
+a op b op c = (a op b) op c
+
+exp, equal
+op is right-associative if
+a op b op c = a op (b op c)
+
+in mathematics,
+(a op b) op c = a op (b op c)
+
+Context Free Grammars can be ambiguous
+We want to work with grammars that are nonambiguous
+
+ambiguous grammar since multiple parse trees for expression like a+b+c
+
+E -> E + E
+E -> lit        / var
+	 TK_INTLIT	  TK_A_VAR
+
+We only consider derivations that are LEFT CANONICAL, meaning we only open left available nonterminal
+
+Further Example:
+	P = { M -> (M)m
+		{ M -> e
+M -> (M)M -> (M)(M)M -> (M)()M -> ((M)M)()M -> ((M))()M -> ((M))() -> (())()
+
+String S of terminals is recognized if
+G -> -> -> -> -> S
+	derivation
+
+G -> (G) -> ((G)) -> (())
+
+Example:
+	T = {'(', ')'}
+	N = { M }
+	P = { M -> e
+		{ M -> (M) --- we mean M -> TK_LPAREN M TK_RPAREN
+	G = M
+
+Context Free Grammars
+	Set of terminals T - tokens in our case
+	Set of nonterminals N
+	Set of productions P, each
+		N -> string of T and N
+	Goal in N
+
+For Single Table Symbol Table:
+	Need to track scopes in one table
+	Table of scopes:
+		For each scope, save the size of symtab
+		allow adding same key if scopes are different
+
+
+
+
+
+3-6-17
+
+int i;
+void p(){
+	float i;
+}
+
+units { global tables in stack structure
+	global table for this module
+
+local tables - scopes can create new tables
+		     - nested procedures
+
+TABLE vs TABLES
+
+SINGLE TABLE:
+	save/restore stack
+	better performance, but more complex
+
+MULTIPLE TABLES:
+	stack of tables
+
+Context Free Grammars
+Within:
+	LL(1)
+	SLR(1)
+	LALR(1)
+
+3-1-17
+Symbol Tables
+How to search
+How to keep the data
+	-must be easy to save and load to disk
+Overall symbol table structure
+
+xyz = ...
+<key, value>
+xyz   TK_A_VAR, type=int, addr=?, variable value
+
+I want to save/load tables quickly
+C: headers + obj
+Pascal: units - "compiled" headers and code
+
+Symtab:
+	byte array
+	no pointers
+
+Linear search
+packed symtab example
+[ , ][ , , , , , ][ ]
+link      key     val
+	 [5,B,E,G,I,N][TK_BEGIN]
+
+relative links for a linked list
+
+char s[]
+wrote short v into s[i] + s[i+1]
+s[i] = v/256
+s[i+1] = v % 256
+*((short*)s+i) = v;
+
+[ , ][ , ][....]
+llink rlink
+
+links are OFFSETS
+
+Linear O(n^2)
+Binary Tree O(n*lg n)
+Hashing O(n)
+
+2-27-17
+
+void gettoken(){
+	switch (chartype[*scanp]){
+		case letter:
+			copy chars to curname while letter or digit
+			truncate if needed
+			convert to upper (lower) case if case-insensitive language
+			check if macro (if we support macros)
+			check if keyword
+			return either keyword or TK_ID
+		case digit:
+			value = 0;
+			while ((c=*scanp++)is a digit) // C, number may begin with dot
+				value = value * 10 + c - '0';
+								|-> base
+				// check for .   ..   .)
+				// check for e
+				// for #: base <- value, check 2 <= base <= 36
+		case operator:
+			// consider <  <=  <<  <>
+			// consider (  (*  (.
+						   |-> comments in Pascal
+			// consider .   .)
+			// consider *   *)  */
+			// consider ++  += and so on
+			// comment - skip to the end, restart function since we need to return token
+		case space:
+			// can be ascii from 1 to 32
+			// go back to start	
+			// new lines should update our error handling variables
+		case quote:
+			// C: backslash code in strings
+			// escape codes can vary "\"" versus """" 
+		case bad:
+			-> error
+		case 0:
+			return TK_EOF
+	}
+}
+
+In C, these are legal
+	0.1
+	.1
+	1.
+But Pascal, digits must precede and follow the dot
+
+
+
+Include Files
+#include "my.file"
+{$I my.file} and/or C-style #include
+
+get file name
+push current file on stack
+open include file - if not found, return error
+goto restart for scanner
+
+Stack of Include files
+	each record:
+		file name,
+		line, col,
+		buffer, scanp
+
+2-22-17
+
+Scanner - characters -> tokens
+
+keywords - reserved words in a list, give each keyword a unique name, TK_FOR, TK_GOTO, ...
+identifiers - TK_ID (temporary) - no value + string name saved => TK_A_VAR, TK_A_LABEL, ..., not done in scanner
+operators - TK_LBRACE, TK_PLUS, ...
+literals
+	integer TK_INTLIT, value = 
+	float TK_REALLIT, value ->(index) table of float point #s, create array that maps indices to floating points
+	char? - act as numbers in C, but are strings in Pascal...
+	string - TK_STRING, value -> table of strings
+eoln? TK_EOLN, value unused
+eof	  TK_EOF, value unused
+pragma
+
+token type
+token value
+curname - save name of identifiers
+
+Use enum or #define to assign unique values to different tokens
+
+GLOBAL
+------
+curtoken - type
+curvalue
+curname
+
+curfile
+curline
+curcol
+
+also global:
+char* scanp -> part of a stack of input files
+
+void compiler(){
+	read_file(); // mmap to read in source code, terminate with null character
+	do {
+		gettoken(); // scanner
+		printtoken(); // debug
+	} while (curtoken != TK_EOF)
+}
+
+int chartype[256] = {...};
+
+void gettoken(){
+	switch (chartype[*scanp]){
+		case letter:
+			copy chars to curname while letter or digit
+			truncate if needed
+			convert to upper (lower) case if case-insensitive language
+			check if macro (if we support macros)
+			check if keyword
+			return either keyword or TK_ID
+		case digit:
+			...
+	}
+}
+
+
+
+2/15/17
+				Preprocessor
+Symbol Tables	Scanner			Error Recovery
+				Parser
+				Constrainer - semantic checker, includes type checking, division by 0
+				Optimizer
+				Emitter (code gen)
+				Linker
+
+Optimizer
+1) Reduction in strength
+	x = 2 * y
+		y << 1
+		y + y
+2) Constant folding
+	x = 1 + 2
+		3
+3) CSE, common subexpression elimination
+	a[2*i+k] = b[2*i+k], triples?
+
+Dead Code Elimination?
+1) 
+goto lab;
+x = y*z; // will never be executed
+lab;
+construct graph for the code, and see if they are reachable
+flow graph?
+
+2) 
+x = y + z * 3;
+x = a - b * 5;
+keep track of stores and loads
+note that there is no way to go from store x to load x
+
+x = f(y);
+y = f(z);
+
+3)
+void junk(){
+	// code that is never called
+}
+
+optimizing linker? compiler cant really touch this as it can be used in other files
+
+Can optimizer get error?
+x = a / (5-5)
+
+Front end - not dependent on hardware
+Back end - not dependent on initial language, cares about hardware
+
+----------------------------------
+Reading the source
+1) as text - never!
+2) By buffers
+3) By circular buffer
+4) Read the entire file
+5) open as memory mapped file!
+
+
+
+2/8/17
+Three Divisions
+Passes -> read through the code, and rewrite the code
+	   -> physical division - intermediate languages
+Phases -> logical, break text into words, tokenize
+Modules -> code components
+
+(0) preprocessor
+
+
+(1) scanner -> sequence of characters into sequence of words
+		-> should understand keywords
+	- errors it can find
+		-illegal characters
+		-1a
+		-"Hello World! - inability to build token
+
+
+(2) symtables -> necessary for keywords
+error recovery -> ours is rudimentary, only first error
+
+
+    v token identifier i
+
+for i := 1 to 10
+
+^^^ token key "for"
+
+(3) Parser - sequence of tokens into parse tree
+	(for)
+ /  |  |    \
+(i)(1)(10)(BODY)
+
+LL(1) - recursive descent parsing
+SLR(1)
+LALR(1)
+
+Optimizer
+
