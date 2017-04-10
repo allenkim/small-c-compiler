@@ -118,6 +118,31 @@ class TK(Enum):
     EOLN = auto()  # new line
     EOF = auto()  # end of file
 
+class TYPE(Enum):
+    # used for denoting sign
+    SIGNED = auto() 
+    UNSIGNED = auto()
+
+    #SIGNED_CHAR = auto() # signed char, 1 byte
+    #UNSIGNED_CHAR = auto() # char, unsigned char
+    CHAR = auto()
+    #SIGNED_SHORT = auto() # short, short int, signed short, signed short int, 2 bytes
+    #UNSIGNED_SHORT = auto() # unsigned short, unsigned short int
+    SHORT = auto()
+    #SIGNED_INT = auto() # int, signed, signed int, 4 bytes
+    #UNSIGNED_INT = auto() # unsigned, unsigned int
+    INT = auto()
+    #SIGNED_LONG = auto() # long, long int, signed long, signed long int, 8 bytes
+    #UNSIGNED_LONG = auto() # unsigned long, unsigned long int
+    #SIGNED_LONG_LONG = auto() # long long, signed long long, signed long long int, 8 bytes
+    #UNSIGNED_LONG_LONG = auto() # unsigned long long, unsigned long long int
+    LONG = auto()
+
+    FLOAT = auto() # float, 4 bytes
+    DOUBLE = auto() # double, long double 8 bytes
+
+    VOID = auto() # void for use in functions
+
 KEYWORDS = {
     "char": TK.CHAR,
     "short": TK.SHORT,

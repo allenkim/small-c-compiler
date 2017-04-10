@@ -1,3 +1,61 @@
+4-5-17
+REPEAT <statements> UNTIL <cond>
+DO <statements> WHILE <cond>
+
+void repeat_st(){
+	match(TK_REPEAT); // never fails
+	int target = ip;
+	statements();
+	match(TK_UNTIL); // may fail
+	condition(); // checks for boolean
+	emit_opcode(JFALSE);
+	emit_addr(target);
+}
+
+WHILE <cond> DO <statement>
+
+void while_st(){
+	match(TK_WHILE); // does not fail
+	int target = ip;
+	condition();
+	emit_opcode(JFALSE);
+	int hole = ip;
+	emit_addr(0);
+	statement();
+	emit_opcode(jmp);
+	emit_addr(target);
+	int save_ip = ip;
+	ip = hole;
+	emit_addr(save_ip);
+	ip = save_ip;
+}
+
+-We can swap cond and stat to make while as efficient as do while
+-concern about jmps in code if we swap
+-relative jmps are generally better
+-goto in while make it harder to swap
+-easy to get right size in backward jmps
+
+								emitter
+compiler writes to -> "pre-code"   ->   code
+
+"precode"
+byte array consisting of these records
+1) [code][size][__size-length__]
+2) [jump][size][label #]
+3) [label][label #]
+
+label table with addresses
+
+IF <cond> THEN <statement>
+IF <cond> THEN <statement> ELSE <statement>
+
+Future Plans:
+goto
+case
+array
+proc
+
 3-29-17
 Assume that F(), T(), and E()
 return TYPE
