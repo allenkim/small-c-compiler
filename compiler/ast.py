@@ -1,10 +1,3 @@
-class AST:
-    """
-    Abstract Syntax Tree Class
-    """
-    def __init__(self):
-        self.root = []
-
 class ExprAST():
     """
     Base class for all expression nodes
@@ -73,7 +66,7 @@ class FunctionAST:
     proto: PrototypeAST
     body: ExprAST
     """
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
+    def __init__(self, proto, body):
+        self.proto = proto
+        self.body = body
 

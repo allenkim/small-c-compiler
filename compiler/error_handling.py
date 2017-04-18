@@ -4,7 +4,7 @@ Error Reporting for our Compiler
 from setup import GLOBALS
 
 
-def scanner_error(msg):
+def processing_error(msg):
     """
     Formats the error message for the scanner
     """

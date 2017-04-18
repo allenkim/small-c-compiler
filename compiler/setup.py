@@ -10,7 +10,8 @@ class TK(Enum):
     """
     # Literals or Identifiers
     INTLIT = auto()  # -2^31, -2^31 + 1, ..., -1, 0, 1, ..., 2^31 - 1
-    FLOATLIT = auto()  # 0.0, 1.2, 3.0 / 2, ...
+    FLOATLIT = auto() # 1.2f, 3.5F 
+    DOUBLELIT = auto() # 0.0, 1.2, 3.0 / 2, ... 
     STRINGLIT = auto()  # "hello", "world", ...
     ID = auto()  # a, abc, ab123, ...
 
@@ -81,6 +82,7 @@ class TK(Enum):
     BIT_NOT = auto()  # ~a
     BIT_AND = auto()  # a & b
     BIT_OR = auto()  # a | b
+    BIT_XOR = auto() # a ^ b
     LSHIFT = auto()  # a << b
     RSHIFT = auto()  # a >> b
 
@@ -92,6 +94,7 @@ class TK(Enum):
     MOD_EQ = auto()  # a %= b
     BIT_AND_EQ = auto()  # a &= b
     BIT_OR_EQ = auto()  # a |= b
+    BIT_XOR_EQ = auto() # a ^= b
     LSHIFT_EQ = auto()  # a <<= b
     RSHIFT_EQ = auto()  # a >>= b
 
@@ -103,7 +106,8 @@ class TK(Enum):
     ASSIGNMENT = auto()  # a = b
     SEMICOLON = auto()  # a;
     COMMA = auto()  # a, b
-    QUESTION = auto()  # a ? b : c
+    
+    QUESTION = auto() # a ? b : c
     COLON = auto()  # a ? b : c
 
     # Paired Symbols
@@ -119,10 +123,6 @@ class TK(Enum):
     EOF = auto()  # end of file
 
 class TYPE(Enum):
-    # used for denoting sign
-    SIGNED = auto() 
-    UNSIGNED = auto()
-
     #SIGNED_CHAR = auto() # signed char, 1 byte
     #UNSIGNED_CHAR = auto() # char, unsigned char
     CHAR = auto()
@@ -142,6 +142,15 @@ class TYPE(Enum):
     DOUBLE = auto() # double, long double 8 bytes
 
     VOID = auto() # void for use in functions
+
+TYPE_SIZE = {
+    TYPE.CHAR: 1,
+    TYPE.SHORT: 2,
+    TYPE.INT: 4,
+    TYPE.LONG: 8,
+    TYPE.FLOAT: 4,
+    TYPE.DOUBLE: 8,
+}
 
 KEYWORDS = {
     "char": TK.CHAR,
@@ -191,6 +200,7 @@ OPERATORS = {
         "~": TK.BIT_NOT,
         "&": TK.BIT_AND,
         "|": TK.BIT_OR,
+        "^": TK.BIT_XOR,
         ".": TK.DOT,
         "=": TK.ASSIGNMENT,
         ";": TK.SEMICOLON,
@@ -217,6 +227,7 @@ OPERATORS = {
         "!=": TK.NEQ,
         "&=": TK.BIT_AND_EQ,
         "|=": TK.BIT_OR_EQ,
+        "^=": TK.BIT_XOR_EQ,
         "<<": TK.LSHIFT,
         ">>": TK.RSHIFT,
         "->": TK.ARROW,
@@ -239,5 +250,6 @@ GLOBALS = {
     "SCAN_P": 0,
 
     "MMAPPED_FILE": None,
+    "BINOP_PRECEDENCE": {},
     "SYMBOL_TABLE": {},
 }

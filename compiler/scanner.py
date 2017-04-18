@@ -2,10 +2,9 @@
 Scanner for our compiler
 """
 from setup import GLOBALS, TK, KEYWORDS, OPERATORS
-from error_handling import scanner_error
+from error_handling import processing_error
 
 curr_char = " "
-
 
 def print_token():
     """
@@ -75,7 +74,7 @@ def get_token():
             if not curr_char.isdigit():
                 if in_e:
                     GLOBALS["CUR_VALUE"] = float(GLOBALS["CUR_VALUE"])
-                    GLOBALS["CUR_TOKEN"] = TK.FLOATLIT
+                    GLOBALS["CUR_TOKEN"] = TK.DOUBLELIT
                     break
                 else:
                     if curr_char == 'e' or curr_char == 'E':
@@ -85,11 +84,11 @@ def get_token():
                         if curr_char == '-' or curr_char.isdigit():
                             continue
                         else:
-                            scanner_error(
+                            processing_error(
                                 "Expected integer after " + curr_char)
                 if in_decimal:
                     GLOBALS["CUR_VALUE"] = float(GLOBALS["CUR_VALUE"])
-                    GLOBALS["CUR_TOKEN"] = TK.FLOATLIT
+                    GLOBALS["CUR_TOKEN"] = TK.DOUBLELIT
                     break
                 else:
                     if curr_char == '.':
@@ -117,7 +116,7 @@ def get_token():
                         get_token()
                         break
                 elif curr_char == TK.EOF:
-                    scanner_error("Unterminated comment")
+                    processing_error("Unterminated comment")
     # Handle characters
     elif curr_char == '\'':
         GLOBALS["CUR_VALUE"] = 0
@@ -128,7 +127,7 @@ def get_token():
                 curr_char = get_char()
                 break
             elif curr_char == '\n' or curr_char == TK.EOF:
-                scanner_error("Unterminated character string")
+                processing_error("Unterminated character string")
             else:
                 GLOBALS["CUR_VALUE"] <<= 8
                 GLOBALS["CUR_VALUE"] += ord(curr_char)
@@ -141,7 +140,7 @@ def get_token():
                 curr_char = get_char()
                 break
             elif curr_char == '\n' or curr_char == TK.EOF:
-                scanner_error("Unterminated string literal")
+                processing_error("Unterminated string literal")
             else:
                 GLOBALS["CUR_VALUE"] += curr_char
     # Checks if the character is an operator
@@ -161,5 +160,5 @@ def get_token():
             GLOBALS["CUR_TOKEN"] = OPERATORS["L1"][tmp_str[:-1]]
    # If character is an unrecognized token, raise error
     else:
-        scanner_error("Unrecognized token: {}".format(curr_char))
+        processing_error("Unrecognized token: {}".format(curr_char))
 
