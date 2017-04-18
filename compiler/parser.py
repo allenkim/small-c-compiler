@@ -16,7 +16,8 @@ from ast import (BodyAST,
                  BinaryExprAST,
                  CallExprAST,
                  PrototypeAST,
-                 FunctionAST)
+                 FunctionAST,
+                 ReturnAST)
 
 def match(token):
     if GLOBALS["CUR_TOKEN"] != token:
@@ -50,6 +51,7 @@ def is_decl_token():
         TK.LONG,
         TK.FLOAT,
         TK.DOUBLE,
+        TK.VOID,
     ]
     return GLOBALS["CUR_TOKEN"] in decl_tokens
 
@@ -91,10 +93,17 @@ def parse_type_dec():
     elif GLOBALS["CUR_TOKEN"] == TK.UNSIGNED:
         get_token()
         type_tuple = (basic_type_dec(), False)
+    elif GLOBALS["CUR_TOKEN"] == TK.VOID:
+        get_token()
+        type_tuple = (TYPE.VOID, None)
     else:
         type_tuple = (basic_type_dec(), True)
         if type_tuple[0] == TYPE.CHAR:
             type_tuple = (TYPE.CHAR, False)
+        elif type_tuple[0] == TYPE.FLOAT:
+            type_tuple = (TYPE.FLOAT, None)
+        elif type_tuple[0] == TYPE.DOUBLE:
+            type_tuple = (TYPE.DOUBLE, None)
     return type_tuple
 
 
@@ -105,6 +114,9 @@ def parse_id_decl(proto=False):
 
     # check if it is a variable
     if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
+        print(typ)
+        if typ == TYPE.VOID:
+            processing_error("variable '{}' declared void".format(id_name))
         symb = make_symbol(id_name, TK.VAR, [], typ, signed)
         GLOBALS["SYMBOL_TABLE"].insert_symbol(symb)
         return VariableExprAST(symb)
@@ -127,7 +139,7 @@ def parse_id_decl(proto=False):
     return FunctionAST(proto, body)
 
 
-def parse_id_expr(typ=None, signed=None):
+def parse_id_expr():
     id_name = GLOBALS["CUR_VALUE"]
     match(TK.ID)
 
@@ -190,6 +202,11 @@ def parse_body():
             else:
                 match(TK.SEMICOLON)
                 body.insert(lhs)
+        elif GLOBALS["CUR_TOKEN"] == TK.RETURN:
+            get_token()
+            expr = parse_expression()
+            match(TK.SEMICOLON)
+            body.insert(ReturnAST(expr))
         else:
             expr = parse_expression()
             match(TK.SEMICOLON)

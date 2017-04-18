@@ -1,10 +1,11 @@
 int foo(int a){
 	int a = 3;
+	return a;
 }
 
 int main() {
-	unsigned long long int a = 3 + 2 * 5;
-	a = 2;
-	foo(2);
+	int a = 3 + 2 * 5;
+	foo(a);
+	return 0;
 }
 

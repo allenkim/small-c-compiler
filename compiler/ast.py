@@ -144,4 +144,15 @@ class FunctionAST:
         self.proto.print_helper(level+1)
         self.body.print_helper(level+1)
 
+class ReturnAST:
+    """
+    Return statement in a function
+    """
+    def __init__(self, expr):
+        self.expr = expr
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "ReturnAST")
+        self.expr.print_helper(level+1)
 
