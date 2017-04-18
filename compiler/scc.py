@@ -67,4 +67,6 @@ if __name__ == "__main__":
     GLOBALS["BINOP_PRECEDENCE"][TK.DIV] = 120
     GLOBALS["BINOP_PRECEDENCE"][TK.MOD] = 120
 
-    parse_c_program()
+    ast = parse_c_program()
+    ast.print()
+

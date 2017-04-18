@@ -3,7 +3,7 @@
  */
 int main() {
 	// A sample main function
-	int a = 3 + 2 * 5;
+	unsigned long long int a = 3 + 2 * 5;
 	a = 2;
 }
 

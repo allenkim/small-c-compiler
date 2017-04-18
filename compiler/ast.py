@@ -12,7 +12,7 @@ class BodyAST:
         self.print_helper(0)
 
     def print_helper(self, level):
-        pad = '\t' * level
+        pad = "  " * level
         print(pad + "BodyAST")
         for child in self.children:
             child.print_helper(level+1)
@@ -37,7 +37,7 @@ class NumberExprAST(ExprAST):
         self.val = val
 
     def print_helper(self, level):
-        pad = '\t' * level
+        pad = "  " * level
         if self.signed == None:
             s = ""
         elif self.signed:
@@ -50,21 +50,22 @@ class NumberExprAST(ExprAST):
 class VariableExprAST(ExprAST):
     """
     Expression class for variables
-    name: name of the variable
+    symbol: Symbol table element
     """
-    def __init__(self, name, typ, signed):
-        super().__init__(typ, signed)
-        self.name = name
+    def __init__(self, symbol):
+        self.symbol = symbol
 
     def print_helper(self, level):
-        pad = '\t' * level
-        if self.signed == None:
+        pad = "  " * level
+        symbol = self.symbol
+        signed = symbol["signed"]
+        if signed == None:
             s = ""
-        elif self.signed:
+        elif signed:
             s = "SIGNED"
         else:
             s = "UNSIGNED"
-        description = "{} {} {}".format(s, self.type, self.name)
+        description = "{} {} {}".format(s, symbol["type"], symbol["name"])
         print(pad + "VariableExprAST: " + description)
 
 
@@ -81,7 +82,7 @@ class BinaryExprAST(ExprAST):
         self.rhs = rhs
 
     def print_helper(self, level):
-        pad = '\t' * level
+        pad = "  " * level
         print(pad + "BinaryExprAST: {}".format(self.op))
         self.lhs.print_helper(level+1)
         self.rhs.print_helper(level+1)
@@ -96,30 +97,34 @@ class CallExprAST(ExprAST):
     def __init__(self, callee, args):
         self.callee = callee
         self.args = args
+        
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "CallExprAST: " + callee)
+        for arg in self.args:
+            arg.print_helper(level+1)
 
 class PrototypeAST:
     """
     Prototype of a function, name and arguments
-    return_type: char, short, int, long, float, double
-    signed: True or False for the return type
-    name: string
-    args: vector of strings
+    fn_symbol: symbol table element for the function
+    args: vector of symbol table elements
     """
-    def __init__(self, return_type, signed, name, args):
-        self.return_type = return_type
-        self.signed = signed
-        self.name = name
+    def __init__(self, fn_symbol, args):
+        self.symbol = fn_symbol
         self.args = args
 
     def print_helper(self, level):
-        pad = '\t' * level
-        if self.signed == None:
+        pad = "  " * level
+        symbol = self.symbol
+        signed = symbol["signed"]
+        if signed == None:
             s = ""
-        elif self.signed:
+        elif signed:
             s = "SIGNED"
         else:
             s = "UNSIGNED"
-        description = "{} {} {}()".format(s, self.return_type, self.name)
+        description = "{} {} {}".format(s, symbol["type"], symbol["name"])
         print(pad + "PrototypeAST: " + description)
 
 
@@ -134,7 +139,7 @@ class FunctionAST:
         self.body = body
 
     def print_helper(self, level):
-        pad = '\t' * level
+        pad = "  " * level
         print(pad + "FunctionAST")
         self.proto.print_helper(level+1)
         self.body.print_helper(level+1)

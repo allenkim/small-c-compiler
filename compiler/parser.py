@@ -9,6 +9,7 @@ import mmap
 from setup import GLOBALS, TK, TYPE
 from scanner import get_token, print_token
 from error_handling import processing_error
+from symtable import make_symbol
 from ast import (BodyAST,
                  NumberExprAST, 
                  VariableExprAST,
@@ -54,17 +55,18 @@ def is_decl_token():
 
 def basic_type_dec():
     basic_type = TYPE.INT
-    is_char = False
+    ending_int = True
     if GLOBALS["CUR_TOKEN"] == TK.CHAR:
         get_token()
         basic_type = TYPE.CHAR
-        is_char = True
+        ending_int = False
     elif GLOBALS["CUR_TOKEN"] == TK.SHORT:
         get_token()
         basic_type = TYPE.SHORT
     elif GLOBALS["CUR_TOKEN"] == TK.INT:
         get_token()
         basic_type = TYPE.INT
+        ending_int = False
     elif GLOBALS["CUR_TOKEN"] == TK.LONG:
         get_token()
         optional_match(TK.LONG)
@@ -75,7 +77,7 @@ def basic_type_dec():
     elif GLOBALS["CUR_TOKEN"] == TK.DOUBLE:
         get_token()
         basic_type = TYPE.DOUBLE
-    if not is_char:
+    if ending_int:
         optional_match(TK.INT)
     return basic_type
 
@@ -91,34 +93,37 @@ def parse_type_dec():
         type_tuple = (basic_type_dec(), False)
     else:
         type_tuple = (basic_type_dec(), True)
-        if type_tuple[1] == TYPE.CHAR:
+        if type_tuple[0] == TYPE.CHAR:
             type_tuple = (TYPE.CHAR, False)
     return type_tuple
 
 
-def parse_id_decl():
+def parse_id_decl(proto=False):
     typ, signed = parse_type_dec()
     id_name = GLOBALS["CUR_VALUE"]
     match(TK.ID)
 
     # check if it is a variable
     if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
-        GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.VAR, [], typ, signed)
-        return VariableExprAST(id_name, typ, signed)
+        symb = make_symbol(id_name, TK.VAR, [], typ, signed)
+        GLOBALS["SYMBOL_TABLE"].insert_symbol(symb)
+        return VariableExprAST(symb)
 
     # else it is a function prototype
-    proto = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
-    if not proto:
-        proto = parse_prototype(id_name, typ, signed)
-        GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
+    symb = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
+    if not symb:
+        symb = GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
+    proto = parse_prototype(symb)
     if GLOBALS["CUR_TOKEN"] == TK.SEMICOLON:
         get_token()
         return proto
     match(TK.LBRACE)
-    GLOBALS["SYMBOL_TABLE"].start_new_scope()
+    GLOBALS["SYMBOL_TABLE"].enter_scope()
+    for arg in proto.args:
+        GLOBALS["SYMBOL_TABLE"].insert_symbol(arg.symb)
     body = parse_body()
     match(TK.RBRACE)
-    GLOBALS["SYMBOL_TABLE"].close_scope()
+    GLOBALS["SYMBOL_TABLE"].exit_scope()
     return FunctionAST(proto, body)
 
 
@@ -130,13 +135,16 @@ def parse_id_expr(typ=None, signed=None):
     if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
         sym = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
         if sym:
-            return VariableExprAST(id_name, sym["type"], sym["signed"])
+            return VariableExprAST(sym)
         else:
             processing_error("'{}' undeclared".format(id_name))
 
     # else it is a function call
-    # at the moment, we don't handle arguments
     match(TK.LPAREN)
+    args = []
+    if GLOBALS["CUR_TOKEN"] != TK.RPAREN:
+        while True:
+            arg = parse_expression()
     match(TK.RPAREN)
     return CallExprAST(id_name, [])
 
@@ -152,8 +160,7 @@ def parse_primary():
     elif cur_tok == TK.LPAREN:
         return parse_paren_expr()
     else:
-        return None
-        # processing_error("Unexpected token {}  when expecting expression".format(cur_tok))
+        processing_error("Unexpected token {}  when expecting expression".format(cur_tok))
 
 # Handling binary operation precedence
 
@@ -169,22 +176,23 @@ def get_token_precedence():
 def parse_body():
     body = BodyAST()
     while GLOBALS["CUR_TOKEN"] != TK.RBRACE:
-        expr = parse_expression()
-        match(TK.SEMICOLON)
-        body.insert(expr)
+        if is_decl_token():
+            lhs = parse_id_decl()
+            if type(lhs) is VariableExprAST and GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
+                expr = parse_binop_rhs(0, lhs)
+                match(TK.SEMICOLON)
+                body.insert(expr)
+            else:
+                match(TK.SEMICOLON)
+                body.insert(lhs)
+        else:
+            expr = parse_expression()
+            match(TK.SEMICOLON)
+            body.insert(expr)
     return body
 
 
 def parse_expression():
-    if is_decl_token():
-        lhs = parse_id_decl()
-        if type(lhs) is FunctionAST:
-            processing_error("Cannot nest function {} in another function".format(lhs.name))
-        if GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
-            return parse_binop_rhs(0, lhs)
-        else:
-            return lhs
-
     lhs = parse_primary()
     if not lhs:
         return None
@@ -213,11 +221,17 @@ def parse_binop_rhs(expr_prec, lhs):
 
         lhs = BinaryExprAST(binop, lhs, rhs)
 
-def parse_prototype(fn_name, typ, signed=None):
+def parse_prototype(symb):
     match(TK.LPAREN)
-    # no arguments allowed for now...
+    arg_names = []
+    while is_decl_token():
+        expr = parse_id_decl()
+        arg_names.append(expr)
+        if GLOBALS["CUR_TOKEN"] == TK.RPAREN:
+            break
+        match(TK.COMMA)
     match(TK.RPAREN)
-    return PrototypeAST(fn_name, [], typ, signed)
+    return PrototypeAST(symb, [])
 
 def main_loop():
     ast = BodyAST()
@@ -241,6 +255,6 @@ def parse_c_program():
         GLOBALS["MMAPPED_FILE"] = mmap.mmap(
             f.fileno(), 0, access=mmap.ACCESS_READ)
         ast = main_loop()
-        ast.print()
         GLOBALS["MMAPPED_FILE"].close()
+        return ast
 
