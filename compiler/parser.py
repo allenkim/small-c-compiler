@@ -9,7 +9,8 @@ import mmap
 from setup import GLOBALS, TK, TYPE
 from scanner import get_token, print_token
 from error_handling import processing_error
-from ast import (NumberExprAST, 
+from ast import (BodyAST,
+                 NumberExprAST, 
                  VariableExprAST,
                  BinaryExprAST,
                  CallExprAST,
@@ -108,12 +109,15 @@ def parse_id_decl():
     # else it is a function prototype
     proto = parse_prototype(id_name, typ, signed)
     GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
+    if GLOBALS["CUR_TOKEN"] == TK.SEMICOLON:
+        get_token()
+        return proto
     match(TK.LBRACE)
     GLOBALS["SYMBOL_TABLE"].start_new_scope()
-    expr = parse_expression()
+    body = parse_body()
     match(TK.RBRACE)
     GLOBALS["SYMBOL_TABLE"].close_scope()
-    return FunctionAST(proto, expr)
+    return FunctionAST(proto, body)
 
 
 def parse_id_expr(typ=None, signed=True):
@@ -145,9 +149,6 @@ def parse_primary():
         return parse_number_expr(TYPE.DOUBLE)
     elif cur_tok == TK.LPAREN:
         return parse_paren_expr()
-    elif cur_tok == TK.EOLN:
-        get_token()
-        return parse_primary()
     else:
         return None
         # processing_error("Unexpected token {}  when expecting expression".format(cur_tok))
@@ -160,13 +161,33 @@ def get_token_precedence():
     cur_tok = GLOBALS["CUR_TOKEN"]
     if cur_tok in binop_precedence:
         return binop_precedence[cur_tok]
-    else: return -1
+    else: 
+        return -1
+
+def parse_body():
+    body = BodyAST()
+    while GLOBALS["CUR_TOKEN"] != TK.RBRACE:
+        expr = parse_expression()
+        match(TK.SEMICOLON)
+        body.insert(expr)
+    return body
+
 
 def parse_expression():
+    if is_decl_token():
+        lhs = parse_id_decl()
+        if type(lhs) is FunctionAST:
+            processing_error("Cannot nest function {} in another function".format(lhs.name))
+        if GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
+            return parse_binop_rhs(0, lhs)
+        else:
+            return lhs
+
     lhs = parse_primary()
     if not lhs:
         return None
-    return parse_binop_rhs(0, lhs)
+    bin_expr = parse_binop_rhs(0, lhs)
+    return bin_expr
 
 def parse_binop_rhs(expr_prec, lhs):
     while True:
@@ -175,7 +196,7 @@ def parse_binop_rhs(expr_prec, lhs):
             return lhs
 
         binop = GLOBALS["CUR_TOKEN"]
-        get_tok()
+        get_token()
         rhs = parse_primary()
         if not rhs:
             return None
@@ -196,14 +217,15 @@ def parse_prototype(fn_name, typ, signed=True):
     match(TK.RPAREN)
     return PrototypeAST(fn_name, [], typ, signed)
 
-
 def main_loop():
+    ast = BodyAST()
     while True:
         get_token()  # our scanner
         if GLOBALS["CUR_TOKEN"] == TK.EOF:
-            break
+            return ast
         else:
-            parse_id_decl()
+            expr = parse_id_decl()
+            ast.insert(expr)
 
 
 def parse_c_program():
@@ -216,6 +238,7 @@ def parse_c_program():
         # memory-map the file, size 0 means whole file
         GLOBALS["MMAPPED_FILE"] = mmap.mmap(
             f.fileno(), 0, access=mmap.ACCESS_READ)
-        main_loop()
+        ast = main_loop()
+        ast.print()
         GLOBALS["MMAPPED_FILE"].close()
 

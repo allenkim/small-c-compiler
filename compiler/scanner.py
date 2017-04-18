@@ -38,19 +38,22 @@ def get_token():
     # Reinitialize current token variables
     GLOBALS["CUR_VALUE"] = ""
 
-    # Check for end of file
-    if curr_char == TK.EOF:
-        GLOBALS["CUR_TOKEN"] = TK.EOF
-        return
+    while True:
+        # Check for end of file
+        if curr_char == TK.EOF:
+            GLOBALS["CUR_TOKEN"] = TK.EOF
+            return
     
-    # Checks if character is white space
-    # New line is treated as a special case though (disabled)
-    while curr_char.isspace():
-        # if curr_char == '\n':
-        #    GLOBALS["CUR_TOKEN"] = TK.EOLN
-        #    curr_char = get_char()
-        #    return
-        curr_char = get_char()
+        # Checks if character is white space
+        # New line is treated as a special case though (disabled)
+        if curr_char.isspace():
+            # if curr_char == '\n':
+            #    GLOBALS["CUR_TOKEN"] = TK.EOLN
+            #    curr_char = get_char()
+            #    return
+            curr_char = get_char()
+        else:
+            break
 
     # If the char is alphabetical or underscore, then we check if keyword or identifier
     if curr_char.isalpha() or curr_char == '_':

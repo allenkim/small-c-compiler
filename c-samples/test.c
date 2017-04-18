@@ -3,6 +3,6 @@
  */
 int main() {
 	// A sample main function
-	a = 3;
+	int a = 3 + 2 * 5;
 }
 
