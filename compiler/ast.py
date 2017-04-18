@@ -38,7 +38,9 @@ class NumberExprAST(ExprAST):
 
     def print_helper(self, level):
         pad = '\t' * level
-        if self.signed:
+        if self.signed == None:
+            s = ""
+        elif self.signed:
             s = "SIGNED"
         else:
             s = "UNSIGNED"
@@ -56,7 +58,9 @@ class VariableExprAST(ExprAST):
 
     def print_helper(self, level):
         pad = '\t' * level
-        if self.signed:
+        if self.signed == None:
+            s = ""
+        elif self.signed:
             s = "SIGNED"
         else:
             s = "UNSIGNED"
@@ -109,7 +113,9 @@ class PrototypeAST:
 
     def print_helper(self, level):
         pad = '\t' * level
-        if self.signed:
+        if self.signed == None:
+            s = ""
+        elif self.signed:
             s = "SIGNED"
         else:
             s = "UNSIGNED"

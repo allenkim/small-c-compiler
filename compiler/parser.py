@@ -107,8 +107,10 @@ def parse_id_decl():
         return VariableExprAST(id_name, typ, signed)
 
     # else it is a function prototype
-    proto = parse_prototype(id_name, typ, signed)
-    GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
+    proto = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
+    if not proto:
+        proto = parse_prototype(id_name, typ, signed)
+        GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
     if GLOBALS["CUR_TOKEN"] == TK.SEMICOLON:
         get_token()
         return proto
@@ -120,15 +122,15 @@ def parse_id_decl():
     return FunctionAST(proto, body)
 
 
-def parse_id_expr(typ=None, signed=True):
+def parse_id_expr(typ=None, signed=None):
     id_name = GLOBALS["CUR_VALUE"]
     match(TK.ID)
 
     # check if it is a variable
     if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
-        print("Variable?")
-        if GLOBALS["SYMBOL_TABLE"].lookup(id_name):
-            return VariableExprAST(id_name, typ, signed)
+        sym = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
+        if sym:
+            return VariableExprAST(id_name, sym["type"], sym["signed"])
         else:
             processing_error("'{}' undeclared".format(id_name))
 
@@ -144,7 +146,7 @@ def parse_primary():
     if cur_tok == TK.ID:
         return parse_id_expr()
     elif cur_tok == TK.INTLIT:
-        return parse_number_expr(TYPE.INT, signed=True)
+        return parse_number_expr(TYPE.INT, signed=None)
     elif cur_tok == TK.DOUBLELIT:
         return parse_number_expr(TYPE.DOUBLE)
     elif cur_tok == TK.LPAREN:
@@ -211,7 +213,7 @@ def parse_binop_rhs(expr_prec, lhs):
 
         lhs = BinaryExprAST(binop, lhs, rhs)
 
-def parse_prototype(fn_name, typ, signed=True):
+def parse_prototype(fn_name, typ, signed=None):
     match(TK.LPAREN)
     # no arguments allowed for now...
     match(TK.RPAREN)

@@ -34,7 +34,7 @@ class SymbolTable:
         signed: (optional) True or False
         """
         if name in self.stack[-1]:
-            processing_error("{} already initialized".format(id_name))
+            processing_error("'{}' already initialized".format(name))
         new_symbol = {
             "name": name,
             "id_type": id_typ,
