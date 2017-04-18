@@ -118,8 +118,7 @@ class TK(Enum):
     LBRACKET = auto()  # [
     RBRACKET = auto()  # ]
 
-    # End of line and end of file
-    EOLN = auto()  # new line
+    # End of file
     EOF = auto()  # end of file
 
 class TYPE(Enum):

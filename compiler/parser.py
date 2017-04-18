@@ -38,74 +38,18 @@ def parse_paren_expr():
     match(TK.RPAREN)
     return v
 
-def parse_id_expr(typ=None, signed=True):
-    id_name = GLOBALS["CUR_VALUE"]
-    match(TK.ID)
-
-    # check if it is a variable
-    if GLOBALS["CUR_TOKEN"] != '(':
-        if lookup(id_name):
-            return VariableExprAST(id_name, typ, signed)
-
-    # else it is a function call
-    # at the moment, we don't handle arguments
-    match(TK.LPAREN)
-    match(TK.RPAREN)
-    return CallExprAST(id_name, [])
-
-
-def parse_primary():
-    cur_tok = GLOBALS["CUR_TOKEN"]
-    if cur_tok == TK.ID:
-        return parse_id_expr()
-    elif cur_tok == TK.INTLIT:
-        return parse_number_expr(TYPE.INT, signed=True)
-    elif cur_tok == TK.DOUBLELIT:
-        return parse_number_expr(TYPE.DOUBLE)
-    elif cur_tok == TK.LPAREN:
-        return parse_paren_expr()
-    else:
-        processing_error("Unexpected token {}  when expecting expression".format(cur_tok))
-
-# Handling binary operation precedence
-
-binop_precedence = GLOBALS["BINOP_PRECEDENCE"]
-
-def get_token_precedence():
-    cur_tok = GLOBALS["CUR_TOKEN"]
-    if cur_tok in binop_precedence:
-        return binop_precedence[cur_tok]
-    else: return -1
-
-def parse_expression():
-    lhs = parse_primary()
-    return parse_binop_rhs(expr_prec=0, lhs)
-
-def parse_binop_rhs(expr_prec, lhs):
-    while True:
-        tok_prec = get_token_precedence()
-        if tok_prec < expr_prec:
-            return lhs
-
-        binop = GLOBALS["CUR_TOKEN"]
-        get_tok()
-        rhs = parse_primary()
-
-        next_prec = get_token_precedence()
-
-        if tok_prec < next_prec:
-            # a binop (b binop unparsed) in this case
-            rhs = parse_binop_rhs(expr_prec+1, rhs)
-
-        lhs = BinaryExprAST(binop, lhs, rhs)
-
-def parse_prototype(typ, signed=True):
-    fn_name = GLOBALS["CUR_VALUE"]
-    match(TK.ID)
-    match(TK.LPAREN)
-    # no arguments allowed for now...
-    match(TK.RPAREN)
-    return PrototypeAST(fn_name, [], typ, signed)
+def is_decl_token():
+    decl_tokens = [
+        TK.SIGNED,
+        TK.UNSIGNED,
+        TK.CHAR,
+        TK.SHORT,
+        TK.INT,
+        TK.LONG,
+        TK.FLOAT,
+        TK.DOUBLE,
+    ]
+    return GLOBALS["CUR_TOKEN"] in decl_tokens
 
 def basic_type_dec():
     basic_type = TYPE.INT
@@ -157,17 +101,100 @@ def parse_id_decl():
     match(TK.ID)
 
     # check if it is a variable
-    if GLOBALS["CUR_TOKEN"] != '(':
+    if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
         GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.VAR, [], typ, signed)
         return VariableExprAST(id_name, typ, signed)
 
     # else it is a function prototype
-    proto = parse_prototype(typ, signed)
+    proto = parse_prototype(id_name, typ, signed)
+    GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
     match(TK.LBRACE)
+    GLOBALS["SYMBOL_TABLE"].start_new_scope()
     expr = parse_expression()
     match(TK.RBRACE)
-    GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
+    GLOBALS["SYMBOL_TABLE"].close_scope()
     return FunctionAST(proto, expr)
+
+
+def parse_id_expr(typ=None, signed=True):
+    id_name = GLOBALS["CUR_VALUE"]
+    match(TK.ID)
+
+    # check if it is a variable
+    if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
+        print("Variable?")
+        if GLOBALS["SYMBOL_TABLE"].lookup(id_name):
+            return VariableExprAST(id_name, typ, signed)
+        else:
+            processing_error("'{}' undeclared".format(id_name))
+
+    # else it is a function call
+    # at the moment, we don't handle arguments
+    match(TK.LPAREN)
+    match(TK.RPAREN)
+    return CallExprAST(id_name, [])
+
+
+def parse_primary():
+    cur_tok = GLOBALS["CUR_TOKEN"]
+    if cur_tok == TK.ID:
+        return parse_id_expr()
+    elif cur_tok == TK.INTLIT:
+        return parse_number_expr(TYPE.INT, signed=True)
+    elif cur_tok == TK.DOUBLELIT:
+        return parse_number_expr(TYPE.DOUBLE)
+    elif cur_tok == TK.LPAREN:
+        return parse_paren_expr()
+    elif cur_tok == TK.EOLN:
+        get_token()
+        return parse_primary()
+    else:
+        return None
+        # processing_error("Unexpected token {}  when expecting expression".format(cur_tok))
+
+# Handling binary operation precedence
+
+binop_precedence = GLOBALS["BINOP_PRECEDENCE"]
+
+def get_token_precedence():
+    cur_tok = GLOBALS["CUR_TOKEN"]
+    if cur_tok in binop_precedence:
+        return binop_precedence[cur_tok]
+    else: return -1
+
+def parse_expression():
+    lhs = parse_primary()
+    if not lhs:
+        return None
+    return parse_binop_rhs(0, lhs)
+
+def parse_binop_rhs(expr_prec, lhs):
+    while True:
+        tok_prec = get_token_precedence()
+        if tok_prec < expr_prec:
+            return lhs
+
+        binop = GLOBALS["CUR_TOKEN"]
+        get_tok()
+        rhs = parse_primary()
+        if not rhs:
+            return None
+
+        next_prec = get_token_precedence()
+
+        if tok_prec < next_prec:
+            # a binop (b binop unparsed) in this case
+            rhs = parse_binop_rhs(expr_prec+1, rhs)
+            if not rhs:
+                return None
+
+        lhs = BinaryExprAST(binop, lhs, rhs)
+
+def parse_prototype(fn_name, typ, signed=True):
+    match(TK.LPAREN)
+    # no arguments allowed for now...
+    match(TK.RPAREN)
+    return PrototypeAST(fn_name, [], typ, signed)
 
 
 def main_loop():
@@ -175,8 +202,6 @@ def main_loop():
         get_token()  # our scanner
         if GLOBALS["CUR_TOKEN"] == TK.EOF:
             break
-        elif GLOBALS["CUR_TOKEN"] == TK.EOLN:
-            continue
         else:
             parse_id_decl()
 

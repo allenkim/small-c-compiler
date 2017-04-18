@@ -44,12 +44,12 @@ def get_token():
         return
     
     # Checks if character is white space
-    # New line is treated as a special case though
+    # New line is treated as a special case though (disabled)
     while curr_char.isspace():
-        if curr_char == '\n':
-            GLOBALS["CUR_TOKEN"] = TK.EOLN
-            curr_char = get_char()
-            return
+        # if curr_char == '\n':
+        #    GLOBALS["CUR_TOKEN"] = TK.EOLN
+        #    curr_char = get_char()
+        #    return
         curr_char = get_char()
 
     # If the char is alphabetical or underscore, then we check if keyword or identifier

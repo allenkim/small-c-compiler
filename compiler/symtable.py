@@ -1,4 +1,4 @@
-from setup import TYPE_SIZE
+from setup import TK, TYPE_SIZE
 from error_handling import processing_error
 
 class SymbolTable:
@@ -11,7 +11,7 @@ class SymbolTable:
 
     def start_new_scope(self):
         self.stack.append({})
-        self.address.append[0]
+        self.address.append(0)
 
     def close_scope(self):
         self.stack.pop()

@@ -4,7 +4,7 @@ Compiler written in Python for a small C-style language
 """
 import sys, argparse
 
-from setup import GLOBALS
+from setup import GLOBALS, TK
 from symtable import SymbolTable
 from parser import parse_c_program
 

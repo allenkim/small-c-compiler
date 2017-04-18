@@ -52,11 +52,13 @@ class PrototypeAST:
     """
     Prototype of a function, name and arguments
     return_type: char, short, int, long, float, double
+    signed: True or False for the return type
     name: string
     args: vector of strings
     """
-    def __init__(self, name, args, typ, signed):
-        super().__init__(typ, signed)
+    def __init__(self, return_type, signed, name, args):
+        self.return_type = return_type
+        self.signed = signed
         self.name = name
         self.args = args
 
