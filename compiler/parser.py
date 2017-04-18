@@ -145,8 +145,13 @@ def parse_id_expr(typ=None, signed=None):
     if GLOBALS["CUR_TOKEN"] != TK.RPAREN:
         while True:
             arg = parse_expression()
+            args.append(arg)
+            if GLOBALS["CUR_TOKEN"] != TK.RPAREN:
+                match(TK.COMMA)
+            else:
+                break
     match(TK.RPAREN)
-    return CallExprAST(id_name, [])
+    return CallExprAST(id_name, args)
 
 
 def parse_primary():
@@ -160,7 +165,7 @@ def parse_primary():
     elif cur_tok == TK.LPAREN:
         return parse_paren_expr()
     else:
-        processing_error("Unexpected token {}  when expecting expression".format(cur_tok))
+        return None
 
 # Handling binary operation precedence
 

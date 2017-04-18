@@ -100,7 +100,7 @@ class CallExprAST(ExprAST):
         
     def print_helper(self, level):
         pad = "  " * level
-        print(pad + "CallExprAST: " + callee)
+        print(pad + "CallExprAST: " + self.callee)
         for arg in self.args:
             arg.print_helper(level+1)
 

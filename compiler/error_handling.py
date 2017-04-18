@@ -3,7 +3,6 @@ Error Reporting for our Compiler
 """
 from setup import GLOBALS
 
-
 def processing_error(msg):
     """
     Formats the error message for the scanner

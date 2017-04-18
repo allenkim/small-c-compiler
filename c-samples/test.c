@@ -1,9 +1,10 @@
-/*
- * Comment
- */
+int foo(int a){
+	int a = 3;
+}
+
 int main() {
-	// A sample main function
 	unsigned long long int a = 3 + 2 * 5;
 	a = 2;
+	foo(2);
 }
 
