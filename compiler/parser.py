@@ -45,7 +45,6 @@ TYPE_STORAGE_TOKENS = [
 ]
 
 
- 
 def match(token):
     if GLOBALS["CUR_TOKEN"] != token:
         processing_error("Expected {}, but got {}".format(token, GLOBALS["CUR_TOKEN"]))

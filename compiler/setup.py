@@ -257,6 +257,9 @@ class OP(Enum):
     DIV = 5
     MOD = 6
 
+    INCR = 28
+    DECR = 29
+
     # Comparison
     EQ = 7
     NEQ = 8

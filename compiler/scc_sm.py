@@ -58,6 +58,26 @@ def run(code, debug):
             stack.append(val)
             if debug:
                 print("push {} into stack".format(val))
+        elif op == OP.INCR.value:
+            addr = []
+            for _ in range(8):
+                addr.append(code[ip])
+                ip += 1
+            addr = struct.unpack("L",bytes(addr))
+            addr = addr[0]
+            data[addr] += 1
+            if debug:
+                print("addr:{} - data: {} + 1 = {}".format(addr,data[addr]-1,data[addr]))
+        elif op == OP.DECR.value:
+            addr = []
+            for _ in range(8):
+                addr.append(code[ip])
+                ip += 1
+            addr = struct.unpack("L",bytes(addr))
+            addr = addr[0]
+            data[addr] -= 1
+            if debug:
+                print("addr:{} - data: {} - 1 = {}".format(addr,data[addr]+1,data[addr]))
         elif op == OP.ADD.value:
             a = stack.pop()
             b = stack.pop()
@@ -163,6 +183,12 @@ def run(code, debug):
             stack.append(bval)
             if debug:
                 print("{} || {} = {}".format(b,a,bval))
+        elif op == OP.BIT_NOT.value:
+            a = stack.pop()
+            bval = ~a
+            stack.append(bval)
+            if debug:
+                print("~{} = {}".format(a,bval))
         elif op == OP.BIT_AND.value:
             a = stack.pop()
             b = stack.pop()

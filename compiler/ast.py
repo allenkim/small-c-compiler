@@ -87,9 +87,9 @@ class VariableExprAST(ExprAST):
             s = "UNSIGNED"
         declared = ""
         if self.decl:
-            declared = "Declared"
+            declared = "Declared "
         description = "{} {} {}".format(s, symbol["type"], symbol["name"])
-        print(pad + "{} {} VariableExprAST: ".format(declared,flags) + description)
+        print(pad + "{}{} VariableExprAST: ".format(declared,flags) + description)
 
     def generate_assembly(self):
         if not self.decl:
@@ -116,7 +116,31 @@ class UnaryExprAST(ExprAST):
 
     def generate_assembly(self):
         operand_code = self.operand.generate_assembly()
-        return operand_code
+        commands = [operand_code]
+        if self.op == TK.NOT:
+            commands.append("not")
+            return "\n".join(commands)
+        elif self.op == TK.BIT_NOT:
+            commands.append("bitnot")
+            return "\n".join(commands)
+        elif self.op == TK.INCR:
+            addr = self.operand.symbol["address"]
+            if self.post:
+                commands.append("push {}".format(addr))
+                commands.append("incr {}".format(addr))
+            else:
+                commands.append("incr {}".format(addr))
+                commands.append("push {}".format(addr))
+            return "\n".join(commands)
+        elif self.op == TK.DECR:
+            addr = self.operand.symbol["address"]
+            if self.post:
+                commands.append("push {}".format(addr))
+                commands.append("decr {}".format(addr))
+            else:
+                commands.append("decr {}".format(addr))
+                commands.append("push {}".format(addr))
+            return "\n".join(commands)
 
 
 class BinaryExprAST(ExprAST):

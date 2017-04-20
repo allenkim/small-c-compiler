@@ -20,6 +20,8 @@ WORD_TO_OP = {
     "mul": OP.MUL,
     "div": OP.DIV,
     "mod": OP.MOD,
+    "incr": OP.INCR,
+    "decr": OP.DECR,
     "eq": OP.EQ,
     "neq": OP.NEQ,
     "lt": OP.LT,
