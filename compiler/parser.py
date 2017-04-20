@@ -13,6 +13,7 @@ from symtable import make_symbol
 from ast import (BodyAST,
                  NumberExprAST, 
                  VariableExprAST,
+                 UnaryExprAST,
                  BinaryExprAST,
                  CallExprAST,
                  PrototypeAST,
@@ -29,7 +30,7 @@ TYPE_TOKENS = [
     TK.FLOAT,
     TK.DOUBLE,
     TK.VOID,
-]
+] 
 
 TYPE_FLAG_TOKENS = [
     TK.CONST,
@@ -42,6 +43,7 @@ TYPE_STORAGE_TOKENS = [
     TK.STATIC,
     TK.EXTERN,
 ]
+
 
  
 def match(token):
@@ -72,6 +74,13 @@ def is_decl_token():
 def is_typemod_token():
     TYPEMOD_TOKENS = TYPE_FLAG_TOKENS + TYPE_STORAGE_TOKENS
     return GLOBALS["CUR_TOKEN"] in TYPEMOD_TOKENS
+
+def is_prepost_token():
+    TYPE_PREPOST_TOKENS = [
+        TK.INCR,
+        TK.DECR,
+    ]
+    return GLOBALS["CUR_TOKEN"] in TYPE_PREPOST_TOKENS
 
 def basic_type_dec():
     basic_type = TYPE.INT
@@ -181,7 +190,14 @@ def parse_id_expr():
     if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
         sym = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
         if sym:
-            return VariableExprAST(sym)
+            var_ast = VariableExprAST(sym)
+            # check for postfix operators
+            if is_prepost_token():
+                postfix_op = GLOBALS["CUR_TOKEN"]
+                get_token()
+                return UnaryExprAST(postfix_op, var_ast, True)
+            else:
+                return var_ast
         else:
             processing_error("'{}' undeclared".format(id_name))
 
@@ -246,11 +262,37 @@ def parse_body():
     return body
 
 def parse_expression():
-    lhs = parse_primary()
+    lhs = parse_unary()
     if not lhs:
         return None
     bin_expr = parse_binop_rhs(0, lhs)
     return bin_expr
+
+def parse_unary():
+    UNARY_OPERATORS = [
+        TK.NOT,
+        TK.BIT_NOT,
+        TK.INCR,
+        TK.DECR,
+    ]
+    if GLOBALS["CUR_TOKEN"] not in UNARY_OPERATORS:
+        return parse_primary()
+    else:
+        prefix_op = GLOBALS["CUR_TOKEN"]
+        if is_prepost_token():
+            get_token()
+            var_ast = parse_id_expr()
+            if type(var_ast) is VariableExprAST:
+                return UnaryExprAST(prefix_op, var_ast)
+            else:
+                processing_error("Expected variable after {}".format(prefix_op))
+       
+        get_token()
+        operand = parse_unary()
+        if operand:
+            return UnaryExprAST(prefix_op, operand)
+        return None
+
 
 def parse_binop_rhs(expr_prec, lhs):
     while True:
@@ -260,7 +302,7 @@ def parse_binop_rhs(expr_prec, lhs):
 
         binop = GLOBALS["CUR_TOKEN"]
         get_token()
-        rhs = parse_primary()
+        rhs = parse_unary()
         if not rhs:
             return None
 

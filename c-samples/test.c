@@ -1,4 +1,5 @@
 int main() {
-	int a = 3 && 10;
+	int a = 5;
+	a = ~~~a;
 }
 

@@ -95,10 +95,34 @@ class VariableExprAST(ExprAST):
         if not self.decl:
             return "push {}".format(self.symbol["address"])
 
+class UnaryExprAST(ExprAST):
+    """
+    Expression class for unary operator
+    op: operator token
+    operand: ExprAST
+    """
+    def __init__(self, op, operand, post=False):
+        self.op = op
+        self.operand = operand
+        self.post = post
+
+    def print_helper(self, level):
+        pad = "  " * level
+        typ = "PREFIX"
+        if self.post:
+            typ = "POSTFIX"
+        print(pad + "{} UnaryExpr: {}".format(typ, self.op))
+        self.operand.print_helper(level+1)
+
+    def generate_assembly(self):
+        operand_code = self.operand.generate_assembly()
+        return operand_code
+
+
 class BinaryExprAST(ExprAST):
     """
     Expression class for binary operator
-    op: operator string
+    op: operator token
     lhs: ExprAST on the left hand side
     rhs: ExprAST on the right hand side
     """
