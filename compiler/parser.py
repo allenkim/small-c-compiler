@@ -19,6 +19,31 @@ from ast import (BodyAST,
                  FunctionAST,
                  ReturnAST)
 
+TYPE_TOKENS = [
+    TK.SIGNED,
+    TK.UNSIGNED,
+    TK.CHAR,
+    TK.SHORT,
+    TK.INT,
+    TK.LONG,
+    TK.FLOAT,
+    TK.DOUBLE,
+    TK.VOID,
+]
+
+TYPE_FLAG_TOKENS = [
+    TK.CONST,
+    TK.VOLATILE,
+]
+
+TYPE_STORAGE_TOKENS = [
+    TK.AUTO,
+    TK.REGISTER,
+    TK.STATIC,
+    TK.EXTERN,
+]
+
+ 
 def match(token):
     if GLOBALS["CUR_TOKEN"] != token:
         processing_error("Expected {}, but got {}".format(token, GLOBALS["CUR_TOKEN"]))
@@ -28,7 +53,6 @@ def match(token):
 def optional_match(token):
     if GLOBALS["CUR_TOKEN"] == token:
         get_token()
-
 
 def parse_number_expr(typ, signed=None):
     result = NumberExprAST(GLOBALS["CUR_VALUE"], typ, signed)
@@ -42,18 +66,12 @@ def parse_paren_expr():
     return v
 
 def is_decl_token():
-    decl_tokens = [
-        TK.SIGNED,
-        TK.UNSIGNED,
-        TK.CHAR,
-        TK.SHORT,
-        TK.INT,
-        TK.LONG,
-        TK.FLOAT,
-        TK.DOUBLE,
-        TK.VOID,
-    ]
-    return GLOBALS["CUR_TOKEN"] in decl_tokens
+    DECL_TOKENS = TYPE_TOKENS + TYPE_FLAG_TOKENS + TYPE_STORAGE_TOKENS
+    return GLOBALS["CUR_TOKEN"] in DECL_TOKENS
+
+def is_typemod_token():
+    TYPEMOD_TOKENS = TYPE_FLAG_TOKENS + TYPE_STORAGE_TOKENS
+    return GLOBALS["CUR_TOKEN"] in TYPEMOD_TOKENS
 
 def basic_type_dec():
     basic_type = TYPE.INT
@@ -83,6 +101,20 @@ def basic_type_dec():
         optional_match(TK.INT)
     return basic_type
 
+def parse_type_flags():
+    flags = set()
+    storage = None
+    while is_typemod_token():
+        if GLOBALS["CUR_TOKEN"] in TYPE_FLAG_TOKENS:
+            flags.add(GLOBALS["CUR_TOKEN"])
+        elif GLOBALS["CUR_TOKEN"] in TYPE_STORAGE_TOKENS:
+            if storage:
+                processing_error("multiple storage classes in declaration")
+            flags.add(GLOBALS["CUR_TOKEN"])
+            storage = GLOBALS["CUR_TOKEN"]
+        get_token()
+    return list(flags)
+
 
 def parse_type_dec():
     # (TYPE, True/False) for signed
@@ -108,23 +140,25 @@ def parse_type_dec():
 
 
 def parse_id_decl(proto=False):
+    flags = []
+    if is_typemod_token():
+        flags = parse_type_flags()
     typ, signed = parse_type_dec()
     id_name = GLOBALS["CUR_VALUE"]
     match(TK.ID)
 
     # check if it is a variable
     if GLOBALS["CUR_TOKEN"] != TK.LPAREN:
-        print(typ)
         if typ == TYPE.VOID:
             processing_error("variable '{}' declared void".format(id_name))
-        symb = make_symbol(id_name, TK.VAR, [], typ, signed)
+        symb = make_symbol(id_name, TK.VAR, flags, typ, signed)
         GLOBALS["SYMBOL_TABLE"].insert_symbol(symb)
-        return VariableExprAST(symb)
+        return VariableExprAST(symb,True)
 
     # else it is a function prototype
     symb = GLOBALS["SYMBOL_TABLE"].lookup(id_name)
     if not symb:
-        symb = GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, [], typ, signed)
+        symb = GLOBALS["SYMBOL_TABLE"].insert(id_name, TK.FUNC, flags, typ, signed)
     proto = parse_prototype(symb)
     if GLOBALS["CUR_TOKEN"] == TK.SEMICOLON:
         get_token()
@@ -181,12 +215,10 @@ def parse_primary():
 
 # Handling binary operation precedence
 
-binop_precedence = GLOBALS["BINOP_PRECEDENCE"]
-
 def get_token_precedence():
     cur_tok = GLOBALS["CUR_TOKEN"]
-    if cur_tok in binop_precedence:
-        return binop_precedence[cur_tok]
+    if cur_tok in GLOBALS["BINOP_PRECEDENCE"]:
+        return GLOBALS["BINOP_PRECEDENCE"][cur_tok]
     else: 
         return -1
 
@@ -212,7 +244,6 @@ def parse_body():
             match(TK.SEMICOLON)
             body.insert(expr)
     return body
-
 
 def parse_expression():
     lhs = parse_primary()
@@ -253,7 +284,7 @@ def parse_prototype(symb):
             break
         match(TK.COMMA)
     match(TK.RPAREN)
-    return PrototypeAST(symb, [])
+    return PrototypeAST(symb, arg_names)
 
 def main_loop():
     ast = BodyAST()

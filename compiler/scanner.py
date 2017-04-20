@@ -120,6 +120,8 @@ def get_token():
                         break
                 elif curr_char == TK.EOF:
                     processing_error("Unterminated comment")
+        else:
+            GLOBALS["CUR_TOKEN"] = TK.DIV
     # Handle characters
     elif curr_char == '\'':
         GLOBALS["CUR_VALUE"] = 0

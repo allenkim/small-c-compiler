@@ -19,45 +19,69 @@ def make_symbol(name, id_typ, flags, typ, signed=True):
     }
     return new_symbol
 
+class SingleTable:
+    """
+    Single symbol table (represents one scope)
+    """
+    def __init__(self, parent=None):
+        self.table = {}
+        self.parent = parent
+        self.children = []
+
+    def lookup(self, name):
+        if name in self.table:
+            return self.table[name]
+        return None
+
+    def insert(self, symb):
+        name = symb["name"]
+        if self.lookup(name):
+            processing_error("'{}' already initialized".format(name))
+        symb["table"] = self
+        self.table[name] = symb
+        return symb
+
 class SymbolTable:
     """
     Stack of symbol tables (keeps track of scope)
     """
     def __init__(self):
-        self.stack = [{}]
+        self.current = SingleTable()
         self.address = 0
 
     def enter_scope(self):
-        self.stack.append({})
+        new_table = SingleTable(self.current)
+        self.current.children.append(new_table)
+        self.current = new_table
 
     def exit_scope(self):
-        self.stack.pop()
+        self.current = self.current.parent
 
     def local_lookup(self, name):
-        if name in self.stack[-1]:
-            return self.stack[-1][name]
+        sym = self.current.lookup()
+        if sym:
+            return sym
         return None
 
     def lookup(self, name):
-        last_idx = len(self.stack) - 1
-        while last_idx >= 0:
-            if name in self.stack[last_idx]:
-                return self.stack[last_idx][name]
-            last_idx -= 1
+        check = self.current
+        while check != None:
+            sym = check.lookup(name)
+            if check.lookup:
+                return sym
+            check = check.parent
         return None
 
     def insert_symbol(self, symb):
-        name = symb["name"]
         typ = symb["type"]
-        if self.local_lookup(name):
-            processing_error("'{}' already initialized".format(name))
         if symb["id_type"] == TK.VAR:
             symb["address"] = self.address
             self.address += TYPE_SIZE[typ]
-        self.stack[-1][name] = symb
+        self.current.insert(symb)
         return symb
 
-    def insert(self, name, id_typ, flags, typ, signed=True):
+    def insert(self, name, id_typ, flags, typ, signed=None):
         new_symbol = make_symbol(name, id_typ, flags, typ, signed)
         self.insert_symbol(new_symbol)
         return new_symbol
+

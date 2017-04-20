@@ -218,6 +218,8 @@ OPERATORS = {
         "++": TK.INCR,
         "-=": TK.MINUS_EQ,
         "--": TK.DECR,
+        "&&": TK.AND,
+        "||": TK.OR,
         "*=": TK.MUL_EQ,
         "/=": TK.DIV_EQ,
         "%=": TK.MOD_EQ,
@@ -237,6 +239,49 @@ OPERATORS = {
         ">>=": TK.RSHIFT_EQ,
     }
 }
+
+class OP(Enum):
+    """
+    Enumeration of all supported op codes
+    """
+    # Data Movement
+    PUSH = 0
+    PUSHIL = 23
+    PUSHID = 24
+    POP = 1
+    
+    # Arithmetic
+    ADD = 2
+    SUB = 3
+    MUL = 4
+    DIV = 5
+    MOD = 6
+
+    # Comparison
+    EQ = 7
+    NEQ = 8
+    LT = 9
+    LTE = 10
+    GT = 11
+    GTE = 12
+
+    # Logic
+    NOT = 25
+    AND = 26
+    OR = 27
+
+     # Bitwise
+    BIT_NOT = 13
+    BIT_AND = 14
+    BIT_OR = 15
+    XOR = 16
+    LSHIFT = 17
+    RSHIFT = 18
+
+    # Jumps
+    JMP = 19
+    JFALSE = 20
+    JTRUE = 21
 
 
 GLOBALS = {

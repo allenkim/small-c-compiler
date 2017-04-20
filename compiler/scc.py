@@ -2,27 +2,66 @@
 """
 Compiler written in Python for a small C-style language
 """
-import sys, argparse
+import sys, argparse, struct
 
-from setup import GLOBALS, TK
+from setup import GLOBALS, TK, OP
 from symtable import SymbolTable
 from parser import parse_c_program
 
 # sys.tracebacklimit = None
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="SCC - Small C Compiler")
-    parser.add_argument("-S", help="output assembly", action="store_true")
-    parser.add_argument("-o","--outfile", help="output executable name")
-    parser.add_argument("infile", help="input file to compile")
-    args = parser.parse_args()
+WORD_TO_OP = {
+    "push": OP.PUSH,
+    "pushil": OP.PUSHIL,
+    "pushid": OP.PUSHID,
+    "pop": OP.POP,
+    "add": OP.ADD,
+    "sub": OP.SUB,
+    "mul": OP.MUL,
+    "div": OP.DIV,
+    "mod": OP.MOD,
+    "eq": OP.EQ,
+    "neq": OP.NEQ,
+    "lt": OP.LT,
+    "lte": OP.LTE,
+    "gt": OP.GT,
+    "gte": OP.GTE,
+    "not": OP.NOT,
+    "and": OP.AND,
+    "or": OP.OR,
+    "bitnot": OP.BIT_NOT,
+    "bitand": OP.BIT_AND,
+    "bitor": OP.BIT_OR,
+    "xor": OP.XOR,
+    "shl": OP.LSHIFT,
+    "shr": OP.RSHIFT,
+    "jmp": OP.JMP,
+    "jfalse": OP.JFALSE,
+    "jtrue": OP.JTRUE,
+}
 
-    GLOBALS["CUR_FILE"] = args.infile
-    if args.outfile:
-        print(args.outfile)
-    if args.S:
-        print("writing to {}.s".format(args.infile.split('.')[0]))
+def isfloat(value):
+  try:
+    float(value)
+    return True
+  except ValueError:
+    return False
 
+def assembly_to_bytes(assembly):
+    words = assembly.split()
+    bytewords = []
+    for word in words:
+        if word in WORD_TO_OP:
+            bytewords.append(bytes([WORD_TO_OP[word].value])) 
+        elif word.isdigit(): 
+            bytewords.append(struct.pack("l",int(word)))
+        elif isfloat(word):
+            bytewords.append(struct.pack("d",float(word)))
+        else:
+            raise ValueError("Unexpected word '{}'".format(word))
+    return b''.join(bytewords)
+
+def init_binop_map():
     GLOBALS["SYMBOL_TABLE"] = SymbolTable()
 
     GLOBALS["BINOP_PRECEDENCE"][TK.COMMA] = 10
@@ -67,6 +106,51 @@ if __name__ == "__main__":
     GLOBALS["BINOP_PRECEDENCE"][TK.DIV] = 120
     GLOBALS["BINOP_PRECEDENCE"][TK.MOD] = 120
 
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="SCC - Small C Compiler")
+    parser.add_argument("-S", help="output assembly", action="store_true")
+    parser.add_argument("-o","--outfile", help="output executable name")
+    parser.add_argument("infile", help="input file to compile")
+    args = parser.parse_args()
+
+    GLOBALS["CUR_FILE"] = args.infile
+
+    init_binop_map()
+
+    path, suffix = args.infile.split('.',1)
+    name = path.split('/')[-1]
+
+    if suffix != 'c' and suffix != 's':
+        raise ValueError("Unrecognized suffix '{}'".format(suffix))
+
+    if suffix == 's':
+        f = "a.out"
+        if args.outfile:
+            f = args.outfile
+        with open(args.infile,"r") as infile:
+            bytecode = assembly_to_bytes(infile.read())
+            with open(f,"wb") as fh:
+                fh.write(bytecode)
+        sys.exit()
+ 
     ast = parse_c_program()
     ast.print()
 
+    if args.S:
+        f = name + ".s"
+        if args.outfile:
+            f = args.outfile
+        assembly = ast.generate_assembly()
+        print(assembly)
+        with open(f,"w") as fh:
+            fh.write(assembly)
+    else:
+        f = "a.out"
+        if args.outfile:
+            f = args.outfile
+        assembly = ast.generate_assembly()
+        bytecode = assembly_to_bytes(assembly)
+        with open(f,"wb") as fh:
+            fh.write(bytecode)
+ 

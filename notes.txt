@@ -1,3 +1,44 @@
+4-19-17
+1) label
+2) goto lab
+3) lab:
+4) end of block
+
+in symtab:
+LAB
+TK_A_LABEL
+seen goto?
+addr
+list_of_gotos <- nil
+	(include hole addr, scope info, src info)
+scope info
+
+1) label (Pascal only)
+	keyword
+	label <namelist>;
+
+2) <goto stat> -> goto <label>
+
+in C, <label> may be TK_ID (if not declared, declare it now)
+		must be a TK_A_LABEL
+	generate a jmp, addr = 0
+	append to list_of_gotos
+	any code to generate? to restore stack for long jumps
+	store previous stacks for those with goto labels
+
+3) <labelling> -> TK_A_LABEL :
+	if (seen) error()
+	seen = true, address = ip
+
+4) for all label records in symtab:
+		if (!seen & list_of_gotos != nil)
+			error()
+		else
+			patch all the holes
+
+nonlocal goto
+try/except
+
 4-5-17
 REPEAT <statements> UNTIL <cond>
 DO <statements> WHILE <cond>
