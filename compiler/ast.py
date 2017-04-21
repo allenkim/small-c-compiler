@@ -116,16 +116,22 @@ class IfExprAST(ExprAST):
 
     def generate_assembly(self):
         global START_NUM, END_NUM
-        cond = self.cond.generate_assembly()
-        j = "jfalse START{}".format(START_NUM)
-        body = self.body.generate_assembly()
+        start_num = START_NUM
+        end_num = END_NUM
+        START_NUM += 2
+        END_NUM += 2
+        commands = []
+        commands.append(self.cond.generate_assembly())
+        commands.append("jfalse START{}".format(start_num))
+        commands.append(self.body.generate_assembly())
+        commands.append("jmp START{}".format(start_num+1))
+        commands.append("END{}".format(end_num))
         els = ""
         if self.els:
             els = self.els.generate_assembly()
-        end = "END{}".format(END_NUM)
-        START_NUM += 1
-        END_NUM += 1
-        return "\n".join([cond,j,body,end,els])
+        commands.append(els)
+        commands.append("END{}".format(end_num+1))
+        return "\n".join(commands)
 
 class UnaryExprAST(ExprAST):
     """

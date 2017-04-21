@@ -4,8 +4,7 @@ SCC SM - Small C Compiler Stack Machine
 """
 
 import argparse, mmap, struct
-from enum import Enum
-
+from enum import Enum 
 from setup import OP
 
 # 8 bit addresses and numbers for now
@@ -229,35 +228,38 @@ def run(code, debug):
             for _ in range(addr_len):
                 ip += 1
                 addr.append(code[ip])
-            addr = struct.unpack("I",bytes(addr))
+            addr = struct.unpack("i",bytes(addr))
             addr = addr[0]
             ip += addr
             if debug:
-                print("jmp {}".format(addr))
+                print("jmp {} bytes".format(addr))
+            continue
         elif op == OP.JFALSE.value:
             addr = []
             for _ in range(addr_len):
                 ip += 1
                 addr.append(code[ip])
-            addr = struct.unpack("I",bytes(addr))
+            addr = struct.unpack("i",bytes(addr))
             addr = addr[0]
             bval = stack.pop()
             if not bval:
                 ip += addr
                 if debug:
-                    print("jmp {}".format(addr))
+                    print("jmp {} bytes".format(addr))
+                continue
         elif op == OP.JTRUE.value:
             addr = []
             for _ in range(addr_len):
                 ip += 1
                 addr.append(code[ip])
-            addr = struct.unpack("I",bytes(addr))
+            addr = struct.unpack("i",bytes(addr))
             addr = addr[0]
             bval = stack.pop()
             if bval:
                 ip += addr
                 if debug:
-                    print("jmp {}".format(addr))
+                    print("jmp {} bytes".format(addr))
+                continue
         elif op == OP.HALT.value:
             if debug:
                 print("halt")

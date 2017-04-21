@@ -66,7 +66,11 @@ def assembly_to_bytes(assembly):
             bytewords.append(struct.pack("f",float(word)))
             for _ in range(addr_len-1):
                 bytewords.append("filler")
-        elif "START" in word or "END" in word:
+        elif "START" in word:
+            for _ in range(addr_len-1):
+                bytewords.append("filler")
+            bytewords.append(word)
+        elif "END" in word:
             bytewords.append(word)
         else:
             raise ValueError("Unexpected word '{}'".format(word))
