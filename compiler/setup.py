@@ -286,6 +286,9 @@ class OP(Enum):
     JFALSE = 20
     JTRUE = 21
 
+    HALT = 30
+    NOP = 31
+
 
 GLOBALS = {
     "CUR_TOKEN": None,

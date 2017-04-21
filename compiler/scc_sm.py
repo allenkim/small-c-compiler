@@ -11,28 +11,28 @@ from setup import OP
 # 8 bit addresses and numbers for now
 def run(code, debug):
     l = len(code)
+    addr_len = 4
     data = {}
     stack = []
     ip = 0
     while ip < l:
         op = code[ip]
-        ip += 1
         if op == OP.PUSH.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
             stack.append(data[addr])
             if debug:
                 print("push value in addr {} into stack".format(addr))
         elif op == OP.POP.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
             elt = stack.pop()
             data[addr] = elt
@@ -40,40 +40,40 @@ def run(code, debug):
                 print("load {} into addr {}".format(elt,addr))
         elif op == OP.PUSHIL.value:
             val = []
-            for _ in range(8):
-                val.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            val = struct.unpack("l",bytes(val))
+                val.append(code[ip])
+            val = struct.unpack("i",bytes(val))
             val = val[0]
             stack.append(val)
             if debug:
                 print("push {} into stack".format(val))
         elif op == OP.PUSHID.value:
             val = []
-            for _ in range(8): 
-                val.append(code[ip])
+            for _ in range(addr_len): 
                 ip += 1
-            val = struct.unpack("d",bytes(val))
+                val.append(code[ip])
+            val = struct.unpack("f",bytes(val))
             val = val[0]
             stack.append(val)
             if debug:
                 print("push {} into stack".format(val))
         elif op == OP.INCR.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
             data[addr] += 1
             if debug:
                 print("addr:{} - data: {} + 1 = {}".format(addr,data[addr]-1,data[addr]))
         elif op == OP.DECR.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
             data[addr] -= 1
             if debug:
@@ -226,32 +226,47 @@ def run(code, debug):
                 print("{} >> {} = {}".format(b,a,bval))
         elif op == OP.JMP.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
-            ip = addr
+            ip += addr
+            if debug:
+                print("jmp {}".format(addr))
         elif op == OP.JFALSE.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
             bval = stack.pop()
             if not bval:
-                ip = addr
+                ip += addr
+                if debug:
+                    print("jmp {}".format(addr))
         elif op == OP.JTRUE.value:
             addr = []
-            for _ in range(8):
-                addr.append(code[ip])
+            for _ in range(addr_len):
                 ip += 1
-            addr = struct.unpack("L",bytes(addr))
+                addr.append(code[ip])
+            addr = struct.unpack("I",bytes(addr))
             addr = addr[0]
             bval = stack.pop()
             if bval:
-                ip = addr
+                ip += addr
+                if debug:
+                    print("jmp {}".format(addr))
+        elif op == OP.HALT.value:
+            if debug:
+                print("halt")
+            return
+        elif op == OP.NOP.value:
+            if debug:
+                print("nop")
+        
+        ip += 1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SCC SM - Small C Compiler Stack Machine")

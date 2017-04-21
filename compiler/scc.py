@@ -40,6 +40,8 @@ WORD_TO_OP = {
     "jmp": OP.JMP,
     "jfalse": OP.JFALSE,
     "jtrue": OP.JTRUE,
+    "halt": OP.HALT,
+    "nop": OP.NOP,
 }
 
 def isfloat(value):
@@ -51,16 +53,47 @@ def isfloat(value):
 
 def assembly_to_bytes(assembly):
     words = assembly.split()
+    addr_len = 4
     bytewords = []
     for word in words:
         if word in WORD_TO_OP:
             bytewords.append(bytes([WORD_TO_OP[word].value])) 
         elif word.isdigit(): 
-            bytewords.append(struct.pack("l",int(word)))
+            bytewords.append(struct.pack("i",int(word)))
+            for _ in range(addr_len-1):
+                bytewords.append("filler")
         elif isfloat(word):
-            bytewords.append(struct.pack("d",float(word)))
+            bytewords.append(struct.pack("f",float(word)))
+            for _ in range(addr_len-1):
+                bytewords.append("filler")
+        elif "START" in word or "END" in word:
+            bytewords.append(word)
         else:
             raise ValueError("Unexpected word '{}'".format(word))
+
+    start_map = {}
+    end_map = {}
+    for idx, word in enumerate(bytewords):
+        if isinstance(word,bytes) or word == "filler":
+            continue
+        elif "START" in word:
+            num = int(word[-1])
+            if num in end_map:
+                end_idx = end_map[num]
+                bytewords[end_idx] = bytes([OP.NOP.value])
+                bytewords[idx] = struct.pack("i",end_idx - idx)
+            else:
+                start_map[num] = idx
+        elif "END" in word:
+            num = int(word[-1])
+            if num in start_map:
+                start_idx = start_map[num]
+                bytewords[start_idx] = struct.pack("i",idx - start_idx)
+                bytewords[idx] = bytes([OP.NOP.value])
+            else:
+                end_map[num] = idx
+
+    bytewords = [byte for byte in bytewords if byte != "filler"]
     return b''.join(bytewords)
 
 def init_binop_map():
@@ -139,19 +172,18 @@ if __name__ == "__main__":
     ast = parse_c_program()
     ast.print()
 
+    assembly = ast.generate_assembly()
+
     if args.S:
         f = name + ".s"
         if args.outfile:
             f = args.outfile
-        assembly = ast.generate_assembly()
-        print(assembly)
         with open(f,"w") as fh:
             fh.write(assembly)
     else:
         f = "a.out"
         if args.outfile:
             f = args.outfile
-        assembly = ast.generate_assembly()
         bytecode = assembly_to_bytes(assembly)
         with open(f,"wb") as fh:
             fh.write(bytecode)

@@ -1,3 +1,28 @@
+4-20-17
+
+case E of 
+[tag: <stat>]+
+end
+
+tag = const, range, list of ranges
+case c of 'a'..'z','A'..'Z'
+end
+
+E -> result on the stack in runtime
+
+dup
+push tag1
+eql
+jfalse next
+
+remove the duplicate before every block
+S1, S2, S3
+
+switch:
+	binary if tree
+	sort by frequency
+	combined?
+
 4-19-17
 1) label
 2) goto lab

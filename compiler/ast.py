@@ -1,5 +1,8 @@
 from setup import TK, TYPE
 
+START_NUM = 0
+END_NUM = 0
+
 class BodyAST:
     """
     Statement sequences of nodes
@@ -94,6 +97,35 @@ class VariableExprAST(ExprAST):
     def generate_assembly(self):
         if not self.decl:
             return "push {}".format(self.symbol["address"])
+
+class IfExprAST(ExprAST):
+    """
+    Expression for if statements
+    """
+    def __init__(self, cond, body, els):
+        self.cond = cond
+        self.body = body
+        self.els = els
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "IfExpr:")
+        self.cond.print_helper(level+1)
+        self.body.print_helper(level+1)
+        self.els.print_helper(level+1)
+
+    def generate_assembly(self):
+        global START_NUM, END_NUM
+        cond = self.cond.generate_assembly()
+        j = "jfalse START{}".format(START_NUM)
+        body = self.body.generate_assembly()
+        els = ""
+        if self.els:
+            els = self.els.generate_assembly()
+        end = "END{}".format(END_NUM)
+        START_NUM += 1
+        END_NUM += 1
+        return "\n".join([cond,j,body,end,els])
 
 class UnaryExprAST(ExprAST):
     """
@@ -374,5 +406,5 @@ class ReturnAST:
         self.expr.print_helper(level+1)
 
     def generate_assembly(self):
-        return ""
+        return "halt"
 

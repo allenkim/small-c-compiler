@@ -67,7 +67,7 @@ class SymbolTable:
         check = self.current
         while check != None:
             sym = check.lookup(name)
-            if check.lookup:
+            if sym:
                 return sym
             check = check.parent
         return None

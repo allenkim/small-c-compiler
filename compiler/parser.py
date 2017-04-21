@@ -18,7 +18,8 @@ from ast import (BodyAST,
                  CallExprAST,
                  PrototypeAST,
                  FunctionAST,
-                 ReturnAST)
+                 ReturnAST,
+                 IfExprAST)
 
 TYPE_TOKENS = [
     TK.SIGNED,
@@ -237,29 +238,6 @@ def get_token_precedence():
     else: 
         return -1
 
-def parse_body():
-    body = BodyAST()
-    while GLOBALS["CUR_TOKEN"] != TK.RBRACE:
-        if is_decl_token():
-            lhs = parse_id_decl()
-            if type(lhs) is VariableExprAST and GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
-                expr = parse_binop_rhs(0, lhs)
-                match(TK.SEMICOLON)
-                body.insert(expr)
-            else:
-                match(TK.SEMICOLON)
-                body.insert(lhs)
-        elif GLOBALS["CUR_TOKEN"] == TK.RETURN:
-            get_token()
-            expr = parse_expression()
-            match(TK.SEMICOLON)
-            body.insert(ReturnAST(expr))
-        else:
-            expr = parse_expression()
-            match(TK.SEMICOLON)
-            body.insert(expr)
-    return body
-
 def parse_expression():
     lhs = parse_unary()
     if not lhs:
@@ -327,6 +305,78 @@ def parse_prototype(symb):
     match(TK.RPAREN)
     return PrototypeAST(symb, arg_names)
 
+def parse_return_expression():
+    match(TK.RETURN)
+    expr = parse_expression()
+    match(TK.SEMICOLON)
+    return ReturnAST(expr)
+
+def parse_if_expression():
+    match(TK.IF)
+    match(TK.LPAREN)
+    cond = parse_expression()
+    match(TK.RPAREN)
+
+    body = None
+    if GLOBALS["CUR_TOKEN"] == TK.LBRACE:
+        match(TK.LBRACE)
+        GLOBALS["SYMBOL_TABLE"].enter_scope()
+        body = parse_body()
+        match(TK.RBRACE)
+        GLOBALS["SYMBOL_TABLE"].exit_scope()
+    else:
+        body = parse_expression()
+        match(TK.SEMICOLON)
+        
+    els = None
+    if GLOBALS["CUR_TOKEN"] == TK.ELSE:
+        match(TK.ELSE)
+        if GLOBALS["CUR_TOKEN"] == TK.LBRACE:
+            match(TK.LBRACE)
+            GLOBALS["SYMBOL_TABLE"].enter_scope()
+            els = parse_body()
+            match(TK.RBRACE)
+            GLOBALS["SYMBOL_TABLE"].exit_scope()
+        elif GLOBALS["CUR_TOKEN"] == TK.IF:
+            els = parse_if_expression()
+        else:
+            els = parse_expression()
+            match(TK.SEMICOLON)
+    return IfExprAST(cond, body, els)
+
+def parse_body():
+    body = BodyAST()
+    lbrace_num = 0
+    while GLOBALS["CUR_TOKEN"] != TK.RBRACE or lbrace_num > 0:
+        if is_decl_token():
+            lhs = parse_id_decl()
+            if type(lhs) is VariableExprAST and GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
+                expr = parse_binop_rhs(0, lhs)
+                match(TK.SEMICOLON)
+                body.insert(expr)
+            else:
+                match(TK.SEMICOLON)
+                body.insert(lhs)
+        elif GLOBALS["CUR_TOKEN"] == TK.LBRACE:
+            match(TK.LBRACE)
+            lbrace_num += 1
+            GLOBALS["SYMBOL_TABLE"].enter_scope()
+        elif GLOBALS["CUR_TOKEN"] == TK.RBRACE:
+            match(TK.RBRACE)
+            lbrace_num -= 1
+            GLOBALS["SYMBOL_TABLE"].exit_scope()
+        elif GLOBALS["CUR_TOKEN"] == TK.IF:
+            if_expr = parse_if_expression()
+            body.insert(if_expr)
+        elif GLOBALS["CUR_TOKEN"] == TK.RETURN:
+            return_expr = parse_return_expression()
+            body.insert(return_expr)
+        else:
+            expr = parse_expression()
+            match(TK.SEMICOLON)
+            body.insert(expr)
+    return body
+
 def main_loop():
     ast = BodyAST()
     while True:
@@ -336,7 +386,6 @@ def main_loop():
         else:
             expr = parse_id_decl()
             ast.insert(expr)
-
 
 def parse_c_program():
     # If empty file, we print error
