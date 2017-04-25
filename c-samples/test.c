@@ -1,11 +1,11 @@
 int main() {
-	int a;
-	if (1 && 0)
+	int a = 0;
+	if (a != 0){
 		a = 1;
-	else if (1)
+	}
+	else{
 		a = 2;
-	else
-		a = 3;
+	}
 	return 0;
 }
 

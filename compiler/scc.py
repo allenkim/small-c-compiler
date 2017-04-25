@@ -66,38 +66,36 @@ def assembly_to_bytes(assembly):
             bytewords.append(struct.pack("f",float(word)))
             for _ in range(addr_len-1):
                 bytewords.append("filler")
-        elif "START" in word:
+        elif ":" in word:
+            bytewords.append(word)
+        elif "L" in word:
             for _ in range(addr_len-1):
                 bytewords.append("filler")
-            bytewords.append(word)
-        elif "END" in word:
             bytewords.append(word)
         else:
             raise ValueError("Unexpected word '{}'".format(word))
 
-    start_map = {}
-    end_map = {}
+    label_addr = {}
+    label_holes = {}
     for idx, word in enumerate(bytewords):
         if isinstance(word,bytes) or word == "filler":
             continue
-        elif "START" in word:
-            num = int(word[-1])
-            if num in end_map:
-                end_idx = end_map[num]
-                bytewords[end_idx] = bytes([OP.NOP.value])
-                bytewords[idx] = struct.pack("i",end_idx - idx)
+        elif ":" in word:
+            num = int(word[1:-1])
+            label_addr[num] = idx
+        elif "L" in word:
+            num = int(word[1:])
+            if num in label_holes:
+                label_holes[num].append(idx)
             else:
-                start_map[num] = idx
-        elif "END" in word:
-            num = int(word[-1])
-            if num in start_map:
-                start_idx = start_map[num]
-                bytewords[start_idx] = struct.pack("i",idx - start_idx)
-                bytewords[idx] = bytes([OP.NOP.value])
-            else:
-                end_map[num] = idx
+                label_holes[num] = [idx]
 
-    bytewords = [byte for byte in bytewords if byte != "filler"]
+    for label_num in label_holes:
+        for idx in label_holes[label_num]:
+            addr = label_addr[label_num]
+            bytewords[idx] = struct.pack("i",addr - idx)
+
+    bytewords = [byte for byte in bytewords if byte != "filler" and byte[0] != "L"]
     return b''.join(bytewords)
 
 def init_binop_map():

@@ -1,7 +1,6 @@
 from setup import TK, TYPE
 
-START_NUM = 0
-END_NUM = 0
+LABEL_NUM = 0
 
 class BodyAST:
     """
@@ -115,22 +114,22 @@ class IfExprAST(ExprAST):
         self.els.print_helper(level+1)
 
     def generate_assembly(self):
-        global START_NUM, END_NUM
-        start_num = START_NUM
-        end_num = END_NUM
-        START_NUM += 2
-        END_NUM += 2
+        global LABEL_NUM
+        label_num = LABEL_NUM
+        LABEL_NUM += 2
         commands = []
         commands.append(self.cond.generate_assembly())
-        commands.append("jfalse START{}".format(start_num))
+        commands.append("jfalse L{}".format(label_num))
         commands.append(self.body.generate_assembly())
-        commands.append("jmp START{}".format(start_num+1))
-        commands.append("END{}".format(end_num))
+        commands.append("jmp L{}".format(label_num+1))
+        commands.append("L{}:".format(label_num))
         els = ""
         if self.els:
             els = self.els.generate_assembly()
-        commands.append(els)
-        commands.append("END{}".format(end_num+1))
+            commands.append(els)
+            commands.append("L{}:".format(label_num+1))
+        else:
+            commands.pop(3)
         return "\n".join(commands)
 
 class UnaryExprAST(ExprAST):
