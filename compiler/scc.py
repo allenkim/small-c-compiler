@@ -54,48 +54,47 @@ def isfloat(value):
 def assembly_to_bytes(assembly):
     words = assembly.split()
     addr_len = 4
+    word_len = 4
     bytewords = []
     for word in words:
         if word in WORD_TO_OP:
             bytewords.append(bytes([WORD_TO_OP[word].value])) 
         elif word.isdigit(): 
             bytewords.append(struct.pack("i",int(word)))
-            for _ in range(addr_len-1):
-                bytewords.append("filler")
         elif isfloat(word):
             bytewords.append(struct.pack("f",float(word)))
-            for _ in range(addr_len-1):
-                bytewords.append("filler")
         elif ":" in word:
             bytewords.append(word)
         elif "L" in word:
-            for _ in range(addr_len-1):
-                bytewords.append("filler")
             bytewords.append(word)
         else:
             raise ValueError("Unexpected word '{}'".format(word))
 
     label_addr = {}
     label_holes = {}
+    bytes_idx = 0
     for idx, word in enumerate(bytewords):
-        if isinstance(word,bytes) or word == "filler":
+        if isinstance(word,bytes):
+            bytes_idx += len(word)
             continue
         elif ":" in word:
             num = int(word[1:-1])
-            label_addr[num] = idx
+            label_addr[num] = bytes_idx
         elif "L" in word:
             num = int(word[1:])
             if num in label_holes:
-                label_holes[num].append(idx)
+                label_holes[num].append((idx,bytes_idx+addr_len-1))
             else:
-                label_holes[num] = [idx]
+                label_holes[num] = [(idx,bytes_idx+addr_len-1)]
+            bytes_idx += addr_len
 
     for label_num in label_holes:
-        for idx in label_holes[label_num]:
+        for idx, bytes_idx in label_holes[label_num]:
             addr = label_addr[label_num]
-            bytewords[idx] = struct.pack("i",addr - idx)
+            jmp_len = addr - bytes_idx
+            bytewords[idx] = struct.pack("i",jmp_len)
 
-    bytewords = [byte for byte in bytewords if byte != "filler" and byte[0] != "L"]
+    bytewords = [byte for byte in bytewords if byte[0] != "L"]
     return b''.join(bytewords)
 
 def init_binop_map():

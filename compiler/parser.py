@@ -19,7 +19,8 @@ from ast import (BodyAST,
                  PrototypeAST,
                  FunctionAST,
                  ReturnAST,
-                 IfExprAST)
+                 IfAST,
+                 DoWhileAST,)
 
 TYPE_TOKENS = [
     TK.SIGNED,
@@ -342,7 +343,27 @@ def parse_if_expression():
         else:
             els = parse_expression()
             match(TK.SEMICOLON)
-    return IfExprAST(cond, body, els)
+    return IfAST(cond, body, els)
+
+def parse_do_while_expression():
+    match(TK.DO)
+    body = None
+    if GLOBALS["CUR_TOKEN"] == TK.LBRACE:
+        match(TK.LBRACE)
+        GLOBALS["SYMBOL_TABLE"].enter_scope()
+        body = parse_body()
+        match(TK.RBRACE)
+        GLOBALS["SYMBOL_TABLE"].exit_scope()
+    else:
+        body = parse_expression()
+        match(TK.SEMICOLON)
+
+    match(TK.WHILE)
+    match(TK.LPAREN)
+    cond = parse_expression()
+    match(TK.RPAREN)
+    match(TK.SEMICOLON)
+    return DoWhileAST(body,cond)
 
 def parse_body():
     body = BodyAST()
@@ -368,6 +389,9 @@ def parse_body():
         elif GLOBALS["CUR_TOKEN"] == TK.IF:
             if_expr = parse_if_expression()
             body.insert(if_expr)
+        elif GLOBALS["CUR_TOKEN"] == TK.DO:
+            do_while_expr = parse_do_while_expression()
+            body.insert(do_while_expr)
         elif GLOBALS["CUR_TOKEN"] == TK.RETURN:
             return_expr = parse_return_expression()
             body.insert(return_expr)

@@ -1,11 +1,8 @@
 int main() {
-	int a = 0;
-	if (a != 0){
-		a = 1;
-	}
-	else{
-		a = 2;
-	}
+	int a = 5;
+	do {
+		a = a - 1;
+	} while (a > 1);
 	return 0;
 }
 

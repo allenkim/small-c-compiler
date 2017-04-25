@@ -232,7 +232,7 @@ def run(code, debug):
             addr = addr[0]
             ip += addr
             if debug:
-                print("jmp {} bytes".format(addr))
+                print("jmp {} bytes to ip {}".format(addr,ip))
             continue
         elif op == OP.JFALSE.value:
             addr = []
@@ -245,7 +245,7 @@ def run(code, debug):
             if not bval:
                 ip += addr
                 if debug:
-                    print("jmp {} bytes".format(addr))
+                    print("jmp {} bytes to ip {}".format(addr,ip))
                 continue
         elif op == OP.JTRUE.value:
             addr = []
@@ -258,7 +258,7 @@ def run(code, debug):
             if bval:
                 ip += addr
                 if debug:
-                    print("jmp {} bytes".format(addr))
+                    print("jmp {} bytes to ip {}".format(addr,ip))
                 continue
         elif op == OP.HALT.value:
             if debug:

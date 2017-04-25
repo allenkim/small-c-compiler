@@ -97,40 +97,6 @@ class VariableExprAST(ExprAST):
         if not self.decl:
             return "push {}".format(self.symbol["address"])
 
-class IfExprAST(ExprAST):
-    """
-    Expression for if statements
-    """
-    def __init__(self, cond, body, els):
-        self.cond = cond
-        self.body = body
-        self.els = els
-
-    def print_helper(self, level):
-        pad = "  " * level
-        print(pad + "IfExpr:")
-        self.cond.print_helper(level+1)
-        self.body.print_helper(level+1)
-        self.els.print_helper(level+1)
-
-    def generate_assembly(self):
-        global LABEL_NUM
-        label_num = LABEL_NUM
-        LABEL_NUM += 2
-        commands = []
-        commands.append(self.cond.generate_assembly())
-        commands.append("jfalse L{}".format(label_num))
-        commands.append(self.body.generate_assembly())
-        commands.append("jmp L{}".format(label_num+1))
-        commands.append("L{}:".format(label_num))
-        els = ""
-        if self.els:
-            els = self.els.generate_assembly()
-            commands.append(els)
-            commands.append("L{}:".format(label_num+1))
-        else:
-            commands.pop(3)
-        return "\n".join(commands)
 
 class UnaryExprAST(ExprAST):
     """
@@ -396,7 +362,10 @@ class FunctionAST:
         self.body.print_helper(level+1)
 
     def generate_assembly(self):
-        return self.body.generate_assembly()
+        if self.proto.symbol["name"] == "main":
+            return self.body.generate_assembly()
+        else:
+            return ""
 
 class ReturnAST:
     """
@@ -412,4 +381,64 @@ class ReturnAST:
 
     def generate_assembly(self):
         return "halt"
+
+class IfAST:
+    """
+    Expression for if statements
+    """
+    def __init__(self, cond, body, els):
+        self.cond = cond
+        self.body = body
+        self.els = els
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "IfExpr:")
+        self.cond.print_helper(level+1)
+        self.body.print_helper(level+1)
+        self.els.print_helper(level+1)
+
+    def generate_assembly(self):
+        global LABEL_NUM
+        label_num = LABEL_NUM
+        LABEL_NUM += 2
+        commands = []
+        commands.append(self.cond.generate_assembly())
+        commands.append("jfalse L{}".format(label_num))
+        commands.append(self.body.generate_assembly())
+        commands.append("jmp L{}".format(label_num+1))
+        commands.append("L{}:".format(label_num))
+        els = ""
+        if self.els:
+            els = self.els.generate_assembly()
+            commands.append(els)
+            commands.append("L{}:".format(label_num+1))
+        else:
+            commands.pop(3)
+        return "\n".join(commands)
+
+class DoWhileAST:
+    """
+    Expression for Do-While statements
+    """
+    def __init__(self, body, cond):
+        self.body = body
+        self.cond = cond
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "DoWhileExpr:")
+        self.body.print_helper(level+1)
+        self.cond.print_helper(level+1)
+
+    def generate_assembly(self):
+        global LABEL_NUM
+        label_num = LABEL_NUM
+        LABEL_NUM += 1
+        commands = []
+        commands.append("L{}:".format(label_num))
+        commands.append(self.body.generate_assembly())
+        commands.append(self.cond.generate_assembly())
+        commands.append("jtrue L{}".format(label_num))
+        return "\n".join(commands)
 
