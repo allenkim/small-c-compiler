@@ -23,7 +23,8 @@ from ast import (BodyAST,
                  IfAST,
                  DoWhileAST,
                  WhileAST,
-                 ForAST,)
+                 ForAST,
+                 BreakAST,)
 
 
 TYPE_TOKENS = [
@@ -256,6 +257,8 @@ def parse_primary():
         return parse_for_expression()
     elif cur_tok == TK.RETURN:
         return parse_return_expression()
+    elif cur_tok == TK.BREAK:
+        return parse_break_expression()
     else:
         return None
 
@@ -346,6 +349,10 @@ def parse_print_expression():
     expr = parse_expression()
     match(TK.RPAREN)
     return PrintAST(expr)
+
+def parse_break_expression():
+    match(TK.BREAK)
+    return BreakAST()
 
 def parse_if_expression():
     match(TK.IF)

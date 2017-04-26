@@ -10,6 +10,7 @@ class BodyAST:
         self.children = []
 
     def insert(self, node):
+        node.parent = self
         self.children.append(node)
 
     def generate_assembly(self):
@@ -403,6 +404,27 @@ class PrintAST:
         commands.append("print")
         return "\n".join(commands)
 
+class BreakAST:
+    """
+    Break statements
+    """
+    def __init__(self):
+        pass
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "BreakAST")
+
+    def generate_assembly(self):
+        parent = self.parent
+        while parent:
+            if hasattr(parent,"label_num"):
+                break
+            parent = parent.parent
+
+        if not parent:
+            raise ValueError("Break not allowed in this context")
+        return "jmp L{}".format(parent.label_num)
 
 class IfAST:
     """
@@ -410,6 +432,7 @@ class IfAST:
     """
     def __init__(self, cond, body, els):
         self.cond = cond
+        body.parent = self
         self.body = body
         self.els = els
 
@@ -418,7 +441,8 @@ class IfAST:
         print(pad + "IfExpr:")
         self.cond.print_helper(level+1)
         self.body.print_helper(level+1)
-        self.els.print_helper(level+1)
+        if self.els:
+            self.els.print_helper(level+1)
 
     def generate_assembly(self):
         global LABEL_NUM
@@ -444,6 +468,7 @@ class DoWhileAST:
     Expression for Do-While statements
     """
     def __init__(self, body, cond):
+        body.parent = self
         self.body = body
         self.cond = cond
 
@@ -455,11 +480,11 @@ class DoWhileAST:
 
     def generate_assembly(self):
         global LABEL_NUM
-        label_num = LABEL_NUM
+        self.label_num = label_num = LABEL_NUM
         LABEL_NUM += 1
         commands = []
         commands.append("L{}:".format(label_num))
-        commands.append(self.body.generate_assembly())
+        commands.append(self.body.generate_assembly(label_num))
         commands.append(self.cond.generate_assembly())
         commands.append("jtrue L{}".format(label_num))
         return "\n".join(commands)
@@ -470,6 +495,7 @@ class WhileAST:
     """
     def __init__(self, cond, body):
         self.cond = cond
+        body.parent = self
         self.body = body
 
     def print_helper(self, level):
@@ -480,13 +506,14 @@ class WhileAST:
 
     def generate_assembly(self):
         global LABEL_NUM
-        label_num = LABEL_NUM
+        self.label_num = label_num = LABEL_NUM
+        self.label_num += 1
         LABEL_NUM += 2
         commands = []
         commands.append("L{}:".format(label_num))
         commands.append(self.cond.generate_assembly())
         commands.append("jfalse L{}".format(label_num+1))
-        commands.append(self.body.generate_assembly())
+        commands.append(self.body.generate_assembly(label_num+1))
         commands.append("jmp L{}".format(label_num))
         commands.append("L{}:".format(label_num+1))
         return "\n".join(commands)
@@ -499,6 +526,7 @@ class ForAST:
         self.init = init
         self.cond = cond
         self.update = update
+        body.parent = self
         self.body = body
 
     def print_helper(self, level):
@@ -514,7 +542,8 @@ class ForAST:
 
     def generate_assembly(self):
         global LABEL_NUM
-        label_num = LABEL_NUM
+        self.label_num = label_num = LABEL_NUM
+        self.label_num += 1
         LABEL_NUM += 2
         commands = []
         if self.init:
