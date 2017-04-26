@@ -101,7 +101,7 @@ def get_token():
                         GLOBALS["CUR_VALUE"] = int(GLOBALS["CUR_VALUE"])
                         GLOBALS["CUR_TOKEN"] = TK.INTLIT
                         break
-    # Handle line and multiline comments
+    # Handle line and multiline comments (and division)
     elif curr_char == '/':
         curr_char = get_char()
         if curr_char == '/':
@@ -120,6 +120,9 @@ def get_token():
                         break
                 elif curr_char == TK.EOF:
                     processing_error("Unterminated comment")
+        elif curr_char == '=':
+            GLOBALS["CUR_TOKEN"] = TK.DIV_EQ
+            curr_char = get_char()
         else:
             GLOBALS["CUR_TOKEN"] = TK.DIV
     # Handle characters
