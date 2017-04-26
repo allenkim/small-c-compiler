@@ -56,6 +56,8 @@ class TK(Enum):
     VOLATILE = auto()
     EXTERN = auto()
 
+    PRINT = auto() # special keyword just for my language
+
     # Arithmetic Operators
     PLUS = auto()  # a + b
     INCR = auto()  # ++a, a++
@@ -184,6 +186,7 @@ KEYWORDS = {
     "register": TK.REGISTER,
     "volatile": TK.VOLATILE,
     "extern": TK.EXTERN,
+    "print": TK.PRINT, # special keyword because printf is a hassle
 }
 
 OPERATORS = {
@@ -245,7 +248,7 @@ class OP(Enum):
     Enumeration of all supported op codes
     """
     # Data Movement
-    PUSH = 0
+    PUSH = 32
     PUSHIL = 23
     PUSHID = 24
     POP = 1
@@ -285,6 +288,8 @@ class OP(Enum):
     JMP = 19
     JFALSE = 20
     JTRUE = 21
+
+    PRINT = 33
 
     HALT = 30
     NOP = 31

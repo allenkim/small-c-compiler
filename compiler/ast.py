@@ -383,6 +383,27 @@ class ReturnAST:
     def generate_assembly(self):
         return "halt"
 
+class PrintAST:
+    """
+    Custom print statement for my C-like language
+    """
+    def __init__(self, expr):
+        self.expr = expr
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "PrintAST")
+        if self.expr:
+            self.expr.print_helper(level+1)
+
+    def generate_assembly(self):
+        commands = []
+        if self.expr:
+            commands.append(self.expr.generate_assembly())
+        commands.append("print")
+        return "\n".join(commands)
+
+
 class IfAST:
     """
     Expression for if statements

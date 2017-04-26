@@ -40,6 +40,7 @@ WORD_TO_OP = {
     "jmp": OP.JMP,
     "jfalse": OP.JFALSE,
     "jtrue": OP.JTRUE,
+    "print": OP.PRINT,
     "halt": OP.HALT,
     "nop": OP.NOP,
 }
@@ -171,7 +172,7 @@ if __name__ == "__main__":
         sys.exit()
  
     ast = parse_c_program()
-    ast.print()
+    # ast.print()
 
     assembly = ast.generate_assembly()
 

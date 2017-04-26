@@ -19,10 +19,12 @@ from ast import (BodyAST,
                  PrototypeAST,
                  FunctionAST,
                  ReturnAST,
+                 PrintAST,
                  IfAST,
                  DoWhileAST,
                  WhileAST,
                  ForAST,)
+
 
 TYPE_TOKENS = [
     TK.SIGNED,
@@ -69,6 +71,19 @@ def parse_paren_expr():
     v = parse_expression()
     match(TK.RPAREN)
     return v
+
+def is_no_semicolon_ast(ast):
+    NO_SEMICOLON_AST = [
+        FunctionAST, 
+        IfAST,
+        WhileAST,
+        ForAST,
+    ]
+    for check_ast in NO_SEMICOLON_AST:
+        if type(ast) is check_ast:
+            return True
+    return False
+
 
 def is_decl_token():
     DECL_TOKENS = TYPE_TOKENS + TYPE_FLAG_TOKENS + TYPE_STORAGE_TOKENS
@@ -229,6 +244,18 @@ def parse_primary():
         return parse_number_expr(TYPE.DOUBLE)
     elif cur_tok == TK.LPAREN:
         return parse_paren_expr()
+    elif cur_tok == TK.PRINT:
+        return parse_print_expression()
+    elif cur_tok == TK.IF:
+        return parse_if_expression()
+    elif cur_tok == TK.DO:
+        return parse_do_while_expression()
+    elif cur_tok == TK.WHILE:
+        return parse_while_expression()
+    elif cur_tok == TK.FOR:
+        return parse_for_expression()
+    elif cur_tok == TK.RETURN:
+        return parse_return_expression()
     else:
         return None
 
@@ -311,8 +338,14 @@ def parse_prototype(symb):
 def parse_return_expression():
     match(TK.RETURN)
     expr = parse_expression()
-    match(TK.SEMICOLON)
     return ReturnAST(expr)
+
+def parse_print_expression():
+    match(TK.PRINT)
+    match(TK.LPAREN)
+    expr = parse_expression()
+    match(TK.RPAREN)
+    return PrintAST(expr)
 
 def parse_if_expression():
     match(TK.IF)
@@ -364,7 +397,6 @@ def parse_do_while_expression():
     match(TK.LPAREN)
     cond = parse_expression()
     match(TK.RPAREN)
-    match(TK.SEMICOLON)
     return DoWhileAST(body,cond)
 
 def parse_while_expression():
@@ -433,24 +465,10 @@ def parse_body():
             match(TK.RBRACE)
             lbrace_num -= 1
             GLOBALS["SYMBOL_TABLE"].exit_scope()
-        elif GLOBALS["CUR_TOKEN"] == TK.IF:
-            if_expr = parse_if_expression()
-            body.insert(if_expr)
-        elif GLOBALS["CUR_TOKEN"] == TK.DO:
-            do_while_expr = parse_do_while_expression()
-            body.insert(do_while_expr)
-        elif GLOBALS["CUR_TOKEN"] == TK.WHILE:
-            while_expr = parse_while_expression()
-            body.insert(while_expr)
-        elif GLOBALS["CUR_TOKEN"] == TK.FOR:
-            for_expr = parse_for_expression()
-            body.insert(for_expr)
-        elif GLOBALS["CUR_TOKEN"] == TK.RETURN:
-            return_expr = parse_return_expression()
-            body.insert(return_expr)
         else:
             expr = parse_expression()
-            match(TK.SEMICOLON)
+            if not is_no_semicolon_ast(expr):
+                match(TK.SEMICOLON)
             body.insert(expr)
     return body
 

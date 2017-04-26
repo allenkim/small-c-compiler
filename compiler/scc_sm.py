@@ -260,6 +260,11 @@ def run(code, debug):
                 if debug:
                     print("jmp {} bytes to ip {}".format(addr,ip))
                 continue
+        elif op == OP.PRINT.value:
+            if len(stack) <= 0:
+                print("\n")
+            val = stack.pop()
+            print(val)
         elif op == OP.HALT.value:
             if debug:
                 print("halt")
