@@ -20,7 +20,9 @@ from ast import (BodyAST,
                  FunctionAST,
                  ReturnAST,
                  IfAST,
-                 DoWhileAST,)
+                 DoWhileAST,
+                 WhileAST,
+                 ForAST,)
 
 TYPE_TOKENS = [
     TK.SIGNED,
@@ -365,6 +367,51 @@ def parse_do_while_expression():
     match(TK.SEMICOLON)
     return DoWhileAST(body,cond)
 
+def parse_while_expression():
+    match(TK.WHILE)
+    match(TK.LPAREN)
+    cond = parse_expression()
+    match(TK.RPAREN)
+    body = None
+    if GLOBALS["CUR_TOKEN"] == TK.LBRACE:
+        match(TK.LBRACE)
+        GLOBALS["SYMBOL_TABLE"].enter_scope()
+        body = parse_body()
+        match(TK.RBRACE)
+        GLOBALS["SYMBOL_TABLE"].exit_scope()
+    else:
+        body = parse_expression()
+        match(TK.SEMICOLON)
+    return WhileAST(cond,body)
+
+def parse_for_expression():
+    match(TK.FOR)
+    match(TK.LPAREN)
+    init = None
+    if is_decl_token():
+        init = parse_id_decl()
+        if type(init) is VariableExprAST and GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
+            init = parse_binop_rhs(0, init)
+    else:
+        init = parse_expression()
+    match(TK.SEMICOLON)
+    cond = parse_expression()
+    match(TK.SEMICOLON)
+    update = parse_expression()
+    match(TK.RPAREN)
+    body = None
+    if GLOBALS["CUR_TOKEN"] == TK.LBRACE:
+        match(TK.LBRACE)
+        GLOBALS["SYMBOL_TABLE"].enter_scope()
+        body = parse_body()
+        match(TK.RBRACE)
+        GLOBALS["SYMBOL_TABLE"].exit_scope()
+    else:
+        body = parse_expression()
+        match(TK.SEMICOLON)
+    return ForAST(init,cond,update,body)
+
+
 def parse_body():
     body = BodyAST()
     lbrace_num = 0
@@ -392,6 +439,12 @@ def parse_body():
         elif GLOBALS["CUR_TOKEN"] == TK.DO:
             do_while_expr = parse_do_while_expression()
             body.insert(do_while_expr)
+        elif GLOBALS["CUR_TOKEN"] == TK.WHILE:
+            while_expr = parse_while_expression()
+            body.insert(while_expr)
+        elif GLOBALS["CUR_TOKEN"] == TK.FOR:
+            for_expr = parse_for_expression()
+            body.insert(for_expr)
         elif GLOBALS["CUR_TOKEN"] == TK.RETURN:
             return_expr = parse_return_expression()
             body.insert(return_expr)

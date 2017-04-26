@@ -96,6 +96,7 @@ class VariableExprAST(ExprAST):
     def generate_assembly(self):
         if not self.decl:
             return "push {}".format(self.symbol["address"])
+        return ""
 
 
 class UnaryExprAST(ExprAST):
@@ -440,5 +441,71 @@ class DoWhileAST:
         commands.append(self.body.generate_assembly())
         commands.append(self.cond.generate_assembly())
         commands.append("jtrue L{}".format(label_num))
+        return "\n".join(commands)
+
+class WhileAST:
+    """
+    Expression for While statements
+    """
+    def __init__(self, cond, body):
+        self.cond = cond
+        self.body = body
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "WhileExpr:")
+        self.cond.print_helper(level+1)
+        self.body.print_helper(level+1)
+
+    def generate_assembly(self):
+        global LABEL_NUM
+        label_num = LABEL_NUM
+        LABEL_NUM += 2
+        commands = []
+        commands.append("L{}:".format(label_num))
+        commands.append(self.cond.generate_assembly())
+        commands.append("jfalse L{}".format(label_num+1))
+        commands.append(self.body.generate_assembly())
+        commands.append("jmp L{}".format(label_num))
+        commands.append("L{}:".format(label_num+1))
+        return "\n".join(commands)
+
+class ForAST:
+    """
+    Expression for For statements
+    """
+    def __init__(self, init, cond, update, body):
+        self.init = init
+        self.cond = cond
+        self.update = update
+        self.body = body
+
+    def print_helper(self, level):
+        pad = "  " * level
+        print(pad + "ForExpr:")
+        if self.init:
+            self.init.print_helper(level+1)
+        if self.cond:
+            self.cond.print_helper(level+1)
+        if self.update:
+            self.update.print_helper(level+1)
+        self.body.print_helper(level+1)
+
+    def generate_assembly(self):
+        global LABEL_NUM
+        label_num = LABEL_NUM
+        LABEL_NUM += 2
+        commands = []
+        if self.init:
+            commands.append(self.init.generate_assembly())
+        commands.append("L{}:".format(label_num))
+        if self.cond:
+            commands.append(self.cond.generate_assembly())
+            commands.append("jfalse L{}".format(label_num+1))
+        commands.append(self.body.generate_assembly())
+        if self.update:
+            commands.append(self.update.generate_assembly())
+        commands.append("jmp L{}".format(label_num))
+        commands.append("L{}:".format(label_num+1))
         return "\n".join(commands)
 
