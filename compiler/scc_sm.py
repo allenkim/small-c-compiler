@@ -13,6 +13,7 @@ def run(code, debug):
     addr_len = 4
     data = {}
     stack = []
+    bp = 0
     ip = 0
     while ip < l:
         op = code[ip]
@@ -37,6 +38,21 @@ def run(code, debug):
             data[addr] = elt
             if debug:
                 print("load {} into addr {}".format(elt,addr))
+        elif op == OP.POPVOID.value:
+            stack.pop()
+            if debug:
+                print("pop")
+        elif op == OP.POPLOCAL.value:
+            addr = []
+            for _ in range(addr_len):
+                ip += 1
+                addr.append(code[ip])
+            addr = struct.unpack("i",bytes(addr))
+            addr = addr[0]
+            elt = stack.pop()
+            stack[bp+addr] = elt
+            if debug:
+                print("load {} into local addr {}".format(elt,addr))
         elif op == OP.PUSHIL.value:
             val = []
             for _ in range(addr_len):
@@ -57,6 +73,17 @@ def run(code, debug):
             stack.append(val)
             if debug:
                 print("push {} into stack".format(val))
+        elif op == OP.PUSHLOCAL.value:
+            addr = []
+            for _ in range(addr_len): 
+                ip += 1
+                addr.append(code[ip])
+            addr = struct.unpack("i",bytes(addr))
+            addr = addr[0]
+            elt = stack[bp+addr]
+            stack.append(elt)
+            if debug:
+                print("push {} into stack".format(elt))
         elif op == OP.INCR.value:
             addr = []
             for _ in range(addr_len):
@@ -260,6 +287,26 @@ def run(code, debug):
                 if debug:
                     print("jmp {} bytes to ip {}".format(addr,ip))
                 continue
+        elif op == OP.CALL.value:
+            addr = []
+            for _ in range(addr_len):
+                ip += 1
+                addr.append(code[ip])
+            addr = struct.unpack("i",bytes(addr))
+            addr = addr[0]
+            stack.append(ip)
+            stack.append(bp)
+            bp = len(stack)
+            ip += addr
+            if debug:
+                print("call jmp {} bytes to ip {}".format(addr,ip))
+        elif op == OP.RET.value:
+            old_bp = stack.pop()
+            old_ip = stack.pop()
+            bp = old_bip
+            ip = old_ip
+            if debug:
+                print("return from function")
         elif op == OP.PRINT.value:
             if len(stack) <= 0:
                 print("\n")

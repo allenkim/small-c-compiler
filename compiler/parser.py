@@ -167,11 +167,15 @@ def parse_type_dec():
     return type_tuple
 
 
-def parse_id_decl(proto=False):
-    flags = []
-    if is_typemod_token():
-        flags = parse_type_flags()
-    typ, signed = parse_type_dec()
+def parse_id_decl(params=None):
+    if not params:
+        flags = []
+        if is_typemod_token():
+            flags = parse_type_flags()
+        typ, signed = parse_type_dec()
+    else:
+        flags, typ, signed = params
+
     id_name = GLOBALS["CUR_VALUE"]
     match(TK.ID)
 
@@ -194,7 +198,7 @@ def parse_id_decl(proto=False):
     match(TK.LBRACE)
     GLOBALS["SYMBOL_TABLE"].enter_scope()
     for arg in proto.args:
-        GLOBALS["SYMBOL_TABLE"].insert_symbol(arg.symb)
+        GLOBALS["SYMBOL_TABLE"].insert_symbol(arg.symbol)
     body = parse_body()
     match(TK.RBRACE)
     GLOBALS["SYMBOL_TABLE"].exit_scope()
@@ -459,11 +463,20 @@ def parse_body():
             lhs = parse_id_decl()
             if type(lhs) is VariableExprAST and GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
                 expr = parse_binop_rhs(0, lhs)
-                match(TK.SEMICOLON)
                 body.insert(expr)
             else:
-                match(TK.SEMICOLON)
                 body.insert(lhs)
+            while GLOBALS["CUR_TOKEN"] == TK.COMMA:
+                match(TK.COMMA)
+                symb = lhs.symbol
+                params = (symb["flags"],symb["type"],symb["signed"])
+                lhs = parse_id_decl(params)
+                if type(lhs) is VariableExprAST and GLOBALS["CUR_TOKEN"] == TK.ASSIGNMENT:
+                    expr = parse_binop_rhs(0, lhs)
+                    body.insert(expr)
+                else:
+                    body.insert(lhs)
+            match(TK.SEMICOLON)
         elif GLOBALS["CUR_TOKEN"] == TK.LBRACE:
             match(TK.LBRACE)
             lbrace_num += 1

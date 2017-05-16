@@ -101,8 +101,6 @@ def assembly_to_bytes(assembly):
 def init_binop_map():
     GLOBALS["SYMBOL_TABLE"] = SymbolTable()
 
-    GLOBALS["BINOP_PRECEDENCE"][TK.COMMA] = 10
-
     GLOBALS["BINOP_PRECEDENCE"][TK.ASSIGNMENT] = 20
     GLOBALS["BINOP_PRECEDENCE"][TK.PLUS_EQ] = 20
     GLOBALS["BINOP_PRECEDENCE"][TK.MINUS_EQ] = 20
@@ -172,7 +170,7 @@ if __name__ == "__main__":
         sys.exit()
  
     ast = parse_c_program()
-    # ast.print()
+    ast.print()
 
     assembly = ast.generate_assembly()
 

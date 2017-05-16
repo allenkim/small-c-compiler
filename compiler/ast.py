@@ -8,6 +8,7 @@ class BodyAST:
     """
     def __init__(self):
         self.children = []
+        self.parent = None
 
     def insert(self, node):
         node.parent = self
@@ -356,6 +357,7 @@ class FunctionAST:
     def __init__(self, proto, body):
         self.proto = proto
         self.body = body
+        self.body.parent = self
 
     def print_helper(self, level):
         pad = "  " * level
@@ -367,7 +369,16 @@ class FunctionAST:
         if self.proto.symbol["name"] == "main":
             return self.body.generate_assembly()
         else:
-            return ""
+            global LABEL_NUM
+            jmp_label_num = LABEL_NUM
+            self.proto.symbol["label_num"] = label_num = LABEL_NUM + 1
+            LABEL_NUM += 2
+            commands = []
+            commands.append("jmp L{}".format(jmp_label_num))
+            commands.append("L{}:".format(label_num))
+            commands.append(self.body.generate_assembly())
+            commands.append("L{}:".format(jmp_label_num))
+            return '\n'.join(commands)
 
 class ReturnAST:
     """
@@ -379,10 +390,22 @@ class ReturnAST:
     def print_helper(self, level):
         pad = "  " * level
         print(pad + "ReturnAST")
-        self.expr.print_helper(level+1)
+        if self.expr:
+            self.expr.print_helper(level+1)
 
     def generate_assembly(self):
-        return "halt"
+        parent = self.parent
+        while parent:
+            if hasattr(parent,"proto"):
+                break
+            parent = parent.parent
+
+        if not parent:
+            raise ValueError("Return not allowed in this context")
+        if parent.proto.symbol["name"] == "main":
+            return "halt"
+        else:
+            return "jmp L{}".format(parent.proto.symbol["label_num"])
 
 class PrintAST:
     """

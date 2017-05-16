@@ -252,6 +252,9 @@ class OP(Enum):
     PUSHIL = 23
     PUSHID = 24
     POP = 1
+    POPVOID = 38
+    POPLOCAL = 34
+    PUSHLOCAL = 35
     
     # Arithmetic
     ADD = 2
@@ -288,6 +291,10 @@ class OP(Enum):
     JMP = 19
     JFALSE = 20
     JTRUE = 21
+
+    # Functions related
+    CALL = 36
+    RET = 37
 
     PRINT = 33
 

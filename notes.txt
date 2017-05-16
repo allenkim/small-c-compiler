@@ -1,3 +1,230 @@
+5-8-17
+Procedures (void function) vs Functions (returns a value)
+need to worry about functions that are used like procedures
+how to actually return the result?
+on stack:
+	placed by special form of return
+
+proc entry in symtab:
+	add proc #,
+		size of proc
+		->fixup table: list of holes in this proc
+			format:
+				addr(hole), proc # you are calling
+
+1) mark proc# = 0 (main) as used; others as not
+mark proc#0 as not processed
+2) Compute addresses
+3) Squeeze code; remove unused
+4) Resolve fixups
+
+5-3-17
+Allow parameters
+1) Create a linked list of arguments in symtab declaration
+
+2) Calling procedure wth args
+	call E() for every element of the list, match types, and convert if needed, match commas
+	push args onto stack
+
+3) use args inside the procedure
+	also enter them into the local tables
+
+4) declare and add to symtab local vars
+
+ret_addr stack[sp-1]
+b		 stack[sp-2]
+a		 stack[sp-3]
+
+b = a + a
+pushl a: pushes data at stack[sp+a]
+
+pushl -3
+pushl -4
+add
+popl -3
+- crazy idea to use a dynamically changing sp to refer to arguments
+
+we want to fix sp by bp <- sp
+save the stack pointer into base pointer (frame pointer)
+
+ret_addr stack[bp-1]
+b		 stack[bp-2]
+a		 stack[bp-3]
+
+we also need to save base pointer for nested function calls
+
+saved bp stack[bp-1]
+ret_addr stack[bp-2]
+b		 stack[bp-3]
+a		 stack[bp-4]
+
+we also need to store local variables
+
+local vars
+saved bp stack[bp-1]
+ret_addr stack[bp-2]
+b		 stack[bp-3]
+a		 stack[bp-4]
+
+entry code for procedures:
+save bp (push)
+bp <- sp
+sp <- sp + localsize
+
+exit code:
+sp <- bp
+restore bp
+
+removing the parameters
+1)
+caller:
+push a
+push b
+call p
+sub sp, sizeofargs
+
+in callee:
+...
+ret
+
+(standard in C)
+
+2)
+caller:
+push a
+push b
+call p
+
+callee:
+...
+ret <sizeofargs>
+(standard in Pascal)
+
+5-1-17
+range check for arrays
+if on, we generate
+E index
+dup
+pushi lo
+lss
+jtrue error
+dup
+pushi hi
+gtr
+jtrue error
+
+dup
+pushi lo
+lss
+jfalse l1
+runerror lineno
+l1:
+dup
+pushi hi
+gtr
+jfalse l2
+runerror lineno
+l2:
+
+intel had instruction:
+bound r/m,lo,hi
+
+procedure
+no args, no local vars for bare bones case
+
+call p = {save ip, jmp p}
+return = {restore ip
+
+save = push
+restore = pop
+
+in symbol table:
+	proc_name
+	TK_A_PROC
+	arg_list
+	address
+	seen?
+
+local vars: nested procedures a bit complicated
+vars will be static
+
+4-26-17
+TK_A_VAR - normal var
+TK_AN_ARRAY - array
+	INDEX_TYPE - any ordinal type
+	ELEMENT_TYPE - any simple type (!restriction!)
+	LO (C-zero)
+	HI
+	SIZE = (HI-LO+1) * size(ELEMENT_TYPE)
+
+1) Declarations
+	var a:array['a'..'z'] of integer;
+	INDEX = CHAR
+	ELT = INT
+	LO = 97
+	HI = 122
+	same ordinal type and LO <= HI
+
+2) LHS Usage
+a[i] = x;
+// assignment
+match(TK_LB)
+type L1 = E();
+if (E != index-type)
+	error!
+match(TK_RB)
+match(ASSIGNMENT)
+
+// index -> address
+if (LO != 0) 
+	// generate
+		pushi LO
+		sub
+if (size(elt_type) != 1)
+	pushi size(elt_type)
+	mul
+pushi addr(array)
+add
+
+type t2 = E();
+// conversion?
+
+Stack:
+val
+addr
+
+*addr = val
+
+put (new instruction to do above)
+
+3) RHS Usage
+x = a[i];
+// expression in F
+F -> id | lit | (E) | id_a[E]
+
+match(TK_LB)
+type L1 = E();
+if (E != index-type)
+	error!
+match(TK_RB)
+match(ASSIGNMENT)
+
+// index -> address
+if (LO != 0) 
+	// generate
+		pushi LO
+		sub
+if (size(elt_type) != 1)
+	pushi size(elt_type)
+	mul
+pushi addr(array)
+add
+
+addr -> val=*addr
+
+get (new instruction to do above)
+
+
 4-24-17
 
 For stack machine:
